@@ -1,3 +1,5 @@
+import FarmerDashboard from './pages/FarmerDashboard'
+import AddProductPage from './pages/AddProductPage'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
@@ -21,6 +23,16 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<AuthPage mode="login" />} />
         <Route path="/register" element={<AuthPage mode="register" />} />
+        <Route path="/farmer/dashboard" element={
+          <ProtectedRoute>
+            <FarmerDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/farmer/add-product" element={
+          <ProtectedRoute>
+            <AddProductPage />
+          </ProtectedRoute>
+        } />
       </Routes>
     </div>
   )
