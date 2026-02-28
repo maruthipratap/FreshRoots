@@ -5,6 +5,7 @@ const connectDB = require('./config/db')
 const authRoutes = require('./routes/authRoutes')
 const productRoutes = require('./routes/productRoutes')
 const orderRoutes = require('./routes/orderRoutes')
+const uploadRoutes = require('./routes/uploadRoutes')
 
 //Load environment variables from .env file
 dotenv.config()
@@ -20,6 +21,7 @@ app.use(express.json())
 app.use('/api/auth', authRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
+app.use('/api/upload', uploadRoutes)
 
 //test route
 app.get('/', (req,res)=>{

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { addProduct } from '../services/api'
+import ImageUpload from '../components/ImageUpload'
 
 const categories = ['vegetables', 'fruits', 'milk & dairy', 'meat', 'eggs', 'crops', 'farm-made products']
 const units = ['kg', 'litre', 'pieces', 'dozen', 'gram', 'bunch']
@@ -9,32 +10,41 @@ const units = ['kg', 'litre', 'pieces', 'dozen', 'gram', 'bunch']
 export default function AddProductPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [imageUrl, setImageUrl] = useState('')
   const [form, setForm] = useState({
     name: '',
     category: '',
     description: '',
     quantityAvailable: '',
     unit: 'kg',
-    pricePerUnit: '',
+    pricePerUnit: ''
   })
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
+  const handleImageUpload = (url) => {
+    setImageUrl(url)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
     if (!form.name || !form.category || !form.quantityAvailable || !form.pricePerUnit) {
       toast.error('Please fill all required fields')
       return
     }
     setLoading(true)
     try {
-      await addProduct({
+      const payload = {
         ...form,
         quantityAvailable: Number(form.quantityAvailable),
-        pricePerUnit: Number(form.pricePerUnit)
-      })
+        pricePerUnit: Number(form.pricePerUnit),
+        images: imageUrl ? [imageUrl] : []
+      }
+      
+      await addProduct(payload)
       toast.success('Product added! 🌱')
       navigate('/farmer/dashboard')
     } catch (err) {
@@ -56,6 +66,12 @@ export default function AddProductPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
+
+        {/* Image Upload */}
+        <ImageUpload
+          onUpload={handleImageUpload}
+          existingImage={imageUrl}
+        />
 
         {/* Name */}
         <div>
@@ -164,6 +180,13 @@ export default function AddProductPage() {
             <div className="text-xs font-bold text-green-600 mb-2 uppercase tracking-wide">
               Preview
             </div>
+            {imageUrl && (
+              <img
+                src={imageUrl}
+                alt="preview"
+                className="w-full h-32 object-cover rounded-lg mb-3"
+              />
+            )}
             <div className="font-semibold text-gray-800">{form.name}</div>
             <div className="text-sm text-gray-500 capitalize">{form.category}</div>
             <div className="text-green-700 font-bold mt-1">

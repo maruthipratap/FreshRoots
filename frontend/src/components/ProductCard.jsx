@@ -11,14 +11,23 @@ const categoryEmoji = {
 }
 
 export default function ProductCard({ product }) {
+  console.log(product.name, product.images)
   const emoji = categoryEmoji[product.category] || '🌿'
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col hover:shadow-md transition hover:-translate-y-1">
 
       {/* Emoji placeholder */}
-      <div className="w-full h-36 bg-green-50 rounded-xl flex items-center justify-center text-6xl mb-4">
-        {emoji}
+      <div className="w-full h-36 bg-green-50 rounded-xl flex items-center justify-center text-6xl mb-4 overflow-hidden">
+        {product.images && product.images.length > 0 && product.images[0] ? (
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          emoji
+        )}
       </div>
 
       <div className="flex-1">

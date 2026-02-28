@@ -3,7 +3,7 @@ const Product = require('../models/Product')
 // @desc   Add a new product
 // @route  POST /api/products
 const addProduct = async (req, res) => {
-  const { category, name, description, quantityAvailable, unit, pricePerUnit } = req.body
+  const { category, name, description, quantityAvailable, unit, pricePerUnit, images } = req.body
 
   if (!category || !name || !quantityAvailable || !unit || !pricePerUnit) {
     return res.status(400).json({ message: 'Please fill all required fields' })
@@ -16,7 +16,8 @@ const addProduct = async (req, res) => {
     description: description || '',
     quantityAvailable,
     unit,
-    pricePerUnit
+    pricePerUnit,
+    images: images || []
   })
 
   res.status(201).json(product)
@@ -70,7 +71,6 @@ const updateProduct = async (req, res) => {
     return res.status(404).json({ message: 'Product not found' })
   }
 
-  // Make sure the farmer owns this product
   if (product.farmerId.toString() !== req.user._id.toString()) {
     return res.status(403).json({ message: 'Not authorized to update this product' })
   }
@@ -93,7 +93,6 @@ const deleteProduct = async (req, res) => {
     return res.status(404).json({ message: 'Product not found' })
   }
 
-  // Make sure the farmer owns this product
   if (product.farmerId.toString() !== req.user._id.toString()) {
     return res.status(403).json({ message: 'Not authorized to delete this product' })
   }
