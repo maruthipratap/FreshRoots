@@ -47,6 +47,14 @@ export default function Navbar() {
                 Browse
               </Link>
             )}
+            {user.role === 'farmer' && (
+              <Link
+                to="/farmer/profile"
+                className="text-green-200 hover:text-white text-sm transition"
+              >
+                Profile
+              </Link>
+            )}
             {user.role === 'buyer' && (
               <Link
                 to="/orders"

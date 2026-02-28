@@ -117,4 +117,22 @@ const getMe = async (req, res) => {
   res.json(req.user)
 }
 
-module.exports = { sendOTP, register, login, getMe }
+// @desc   Update profile
+// @route  PATCH /api/auth/profile
+const updateProfile = async (req, res) => {
+  const { name, location } = req.body
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ message: 'Name is required' })
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { name: name.trim(), location: location || '' },
+    { new: true }
+  )
+
+  res.json(user)
+}
+
+module.exports = { sendOTP, register, login, getMe, updateProfile }
