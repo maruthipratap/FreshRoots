@@ -1,15 +1,14 @@
-import FarmerDashboard from './pages/FarmerDashboard'
-import AddProductPage from './pages/AddProductPage'
-import BrowsePage from './pages/BrowsePage'
-import OrderPage from './pages/OrderPage'
-import OrderStatusPage from './pages/OrderStatusPage'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
 import AuthPage from './pages/AuthPage'
-
-const Home = () => <div className="p-8 text-2xl">🌱 FreshRoots Home</div>
+import HomePage from './pages/HomePage'
+import FarmerDashboard from './pages/FarmerDashboard'
+import AddProductPage from './pages/AddProductPage'
+import BrowsePage from './pages/BrowsePage'
+import OrderPage from './pages/OrderPage'
+import OrderStatusPage from './pages/OrderStatusPage'
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -23,7 +22,7 @@ function AppContent() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<AuthPage mode="login" />} />
         <Route path="/register" element={<AuthPage mode="register" />} />
         <Route path="/farmer/dashboard" element={
