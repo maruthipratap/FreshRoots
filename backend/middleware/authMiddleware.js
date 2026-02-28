@@ -1,0 +1,43 @@
+const jwt = require('jsonwebtoken')
+const User = require('../models/User')
+
+const protect = async (req, res, next) => {
+  let token
+
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      // Get token from header
+      token = req.headers.authorization.split(' ')[1]
+
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET)
+
+      // Get user from token
+      req.user = await User.findById(decoded.id)
+
+      next()
+    } catch (error) {
+      res.status(401).json({ message: 'Not authorized, token failed' })
+    }
+  } else {
+    res.status(401).json({ message: 'Not authorized, no token' })
+  }
+}
+
+const farmerOnly = (req, res, next) => {
+  if (req.user && req.user.role === 'farmer') {
+    next()
+  } else {
+    res.status(403).json({ message: 'Access denied. Farmers only.' })
+  }
+}
+
+const buyerOnly = (req, res, next) => {
+  if (req.user && req.user.role === 'buyer') {
+    next()
+  } else {
+    res.status(403).json({ message: 'Access denied. Buyers only.' })
+  }
+}
+
+module.exports = { protect, farmerOnly, buyerOnly }
