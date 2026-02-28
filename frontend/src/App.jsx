@@ -1,5 +1,6 @@
 import FarmerDashboard from './pages/FarmerDashboard'
 import AddProductPage from './pages/AddProductPage'
+import BrowsePage from './pages/BrowsePage'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
@@ -31,6 +32,11 @@ function AppContent() {
         <Route path="/farmer/add-product" element={
           <ProtectedRoute>
             <AddProductPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/browse" element={
+          <ProtectedRoute>
+            <BrowsePage />
           </ProtectedRoute>
         } />
       </Routes>
