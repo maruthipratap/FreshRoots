@@ -1,6 +1,8 @@
 import FarmerDashboard from './pages/FarmerDashboard'
 import AddProductPage from './pages/AddProductPage'
 import BrowsePage from './pages/BrowsePage'
+import OrderPage from './pages/OrderPage'
+import OrderStatusPage from './pages/OrderStatusPage'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
@@ -37,6 +39,16 @@ function AppContent() {
         <Route path="/browse" element={
           <ProtectedRoute>
             <BrowsePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/product/:id" element={
+          <ProtectedRoute>
+            <OrderPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/orders" element={
+          <ProtectedRoute>
+            <OrderStatusPage />
           </ProtectedRoute>
         } />
       </Routes>

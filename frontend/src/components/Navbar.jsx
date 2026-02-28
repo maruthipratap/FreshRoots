@@ -47,6 +47,14 @@ export default function Navbar() {
                 Browse
               </Link>
             )}
+            {user.role === 'buyer' && (
+              <Link
+                to="/orders"
+                className="text-green-200 hover:text-white text-sm transition"
+              >
+                My Orders
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               className="text-green-300 hover:text-white text-sm transition"
