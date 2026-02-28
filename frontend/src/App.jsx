@@ -9,6 +9,7 @@ import AddProductPage from './pages/AddProductPage'
 import BrowsePage from './pages/BrowsePage'
 import OrderPage from './pages/OrderPage'
 import OrderStatusPage from './pages/OrderStatusPage'
+import EditProductPage from './pages/EditProductPage'
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -48,6 +49,11 @@ function AppContent() {
         <Route path="/orders" element={
           <ProtectedRoute>
             <OrderStatusPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/farmer/edit-product/:id" element={
+          <ProtectedRoute>
+            <EditProductPage />
           </ProtectedRoute>
         } />
       </Routes>

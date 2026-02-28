@@ -154,6 +154,12 @@ export default function FarmerDashboard() {
                     <div>📦 {p.quantityAvailable} {p.unit} available</div>
                   </div>
                   <div className="flex gap-2">
+                    <Link
+                      to={`/farmer/edit-product/${p._id}`}
+                      className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 font-semibold text-sm py-2 rounded-xl transition text-center"
+                    >
+                      Edit
+                    </Link>
                     <button
                       onClick={() => handleDelete(p._id)}
                       className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-sm py-2 rounded-xl transition"
