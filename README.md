@@ -1,5 +1,5 @@
 # 🌱 FreshRoots
-
+![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)
 > **Soil to Soul — Direct from Farmers**
 
 FreshRoots is a full-stack farmer-to-buyer marketplace where farmers sell their products directly to buyers — homes, restaurants, shops, and bulk buyers — with zero middlemen.
