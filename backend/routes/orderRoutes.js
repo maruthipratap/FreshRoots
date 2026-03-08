@@ -14,5 +14,7 @@ router.get('/farmer/:farmerId', protect, getFarmerOrders)
 router.get('/buyer/:buyerId', protect, getBuyerOrders)
 router.patch('/:id/status', protect, updateOrderStatus)
 router.patch('/:id/payment', protect, updatePaymentStatus)
+router.patch('/request-verification', protect, farmerOnly, requestVerification)
+router.patch('/admin/verify/:userId', protect, verifyFarmer)
 
 module.exports = router

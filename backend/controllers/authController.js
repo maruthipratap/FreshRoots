@@ -135,4 +135,28 @@ const updateProfile = async (req, res) => {
   res.json(user)
 }
 
-module.exports = { sendOTP, register, login, getMe, updateProfile }
+// Farmer requests verification
+const requestVerification = async (req, res) => {
+  const user = await User.findById(req.user._id)
+  if (user.verificationStatus === 'verified') {
+    return res.status(400).json({ message: 'Already verified' })
+  }
+  user.verificationStatus = 'pending'
+  await user.save()
+  res.json({ message: 'Verification requested', verificationStatus: 'pending' })
+}
+
+// Admin verifies a farmer
+const verifyFarmer = async (req, res) => {
+  const { status } = req.body // 'verified' or 'rejected'
+  const user = await User.findById(req.params.userId)
+  if (!user) return res.status(404).json({ message: 'User not found' })
+  user.verificationStatus = status
+  user.isVerified = status === 'verified'
+  await user.save()
+  res.json({ message: `Farmer ${status}`, user })
+}
+module.exports = {
+  sendOTP, register, login, getMe, updateProfile,
+  requestVerification, verifyFarmer
+}
