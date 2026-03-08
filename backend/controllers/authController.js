@@ -1,36 +1,29 @@
-const jwt = require('jsonwebtoken')
 const User = require('../models/User')
+const jwt = require('jsonwebtoken')
 
-// In-memory OTP store (resets when server restarts - fine for MVP)
+// In-memory OTP store { phoneNumber: { otp, expiresAt } }
 const otpStore = {}
 
 // Generate JWT token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' })
+const generateToken = (userId) => {
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '30d' })
 }
 
-// @desc   Send OTP
+// @desc   Send OTP to phone number
 // @route  POST /api/auth/send-otp
 const sendOTP = async (req, res) => {
   const { phoneNumber } = req.body
-
   if (!phoneNumber) {
     return res.status(400).json({ message: 'Phone number is required' })
   }
-
-  // Mock OTP - always 1234 in development
+  // Mock OTP — always 1234 in dev
   const otp = '1234'
   otpStore[phoneNumber] = {
     otp,
-    expiresAt: Date.now() + 5 * 60 * 1000 // expires in 5 minutes
+    expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
   }
-
-  console.log(`📱 OTP for ${phoneNumber}: ${otp}`)
-
-  res.json({
-    message: 'OTP sent successfully',
-    devOtp: '1234'
-  })
+  console.log(`OTP for ${phoneNumber}: ${otp}`)
+  res.json({ message: 'OTP sent successfully' })
 }
 
 // @desc   Register new user
@@ -38,57 +31,47 @@ const sendOTP = async (req, res) => {
 const register = async (req, res) => {
   const { name, phoneNumber, role, location, otp } = req.body
 
-  // Check all fields
-  if (!name || !phoneNumber || !role || !otp) {
-    return res.status(400).json({ message: 'Please fill all fields' })
-  }
-
-  // Validate OTP
-  const storedOtp = otpStore[phoneNumber]
-  if (!storedOtp || storedOtp.otp !== otp || Date.now() > storedOtp.expiresAt) {
+  // Verify OTP
+  const stored = otpStore[phoneNumber]
+  if (!stored || stored.otp !== otp || Date.now() > stored.expiresAt) {
     return res.status(400).json({ message: 'Invalid or expired OTP' })
   }
 
   // Check if user already exists
-  const userExists = await User.findOne({ phoneNumber })
-  if (userExists) {
-    return res.status(400).json({ message: 'User already exists' })
+  const existingUser = await User.findOne({ phoneNumber })
+  if (existingUser) {
+    return res.status(400).json({ message: 'User already exists with this phone number' })
   }
 
   // Create user
-  const user = await User.create({
-    name,
-    phoneNumber,
-    role,
-    location: location || '',
-    isVerified: true
-  })
+  const user = await User.create({ name, phoneNumber, role, location })
 
-  // Delete OTP after use
+  // Clear OTP
   delete otpStore[phoneNumber]
 
+  const token = generateToken(user._id)
   res.status(201).json({
-    _id: user._id,
-    name: user.name,
-    phoneNumber: user.phoneNumber,
-    role: user.role,
-    location: user.location,
-    token: generateToken(user._id)
+    token,
+    user: {
+      _id: user._id,
+      name: user.name,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      location: user.location,
+      isVerified: user.isVerified,
+      verificationStatus: user.verificationStatus
+    }
   })
 }
 
-// @desc   Login user
+// @desc   Login existing user
 // @route  POST /api/auth/login
 const login = async (req, res) => {
   const { phoneNumber, otp } = req.body
 
-  if (!phoneNumber || !otp) {
-    return res.status(400).json({ message: 'Phone number and OTP are required' })
-  }
-
-  // Validate OTP
-  const storedOtp = otpStore[phoneNumber]
-  if (!storedOtp || storedOtp.otp !== otp || Date.now() > storedOtp.expiresAt) {
+  // Verify OTP
+  const stored = otpStore[phoneNumber]
+  if (!stored || stored.otp !== otp || Date.now() > stored.expiresAt) {
     return res.status(400).json({ message: 'Invalid or expired OTP' })
   }
 
@@ -98,44 +81,45 @@ const login = async (req, res) => {
     return res.status(404).json({ message: 'User not found. Please register first.' })
   }
 
-  // Delete OTP after use
+  // Clear OTP
   delete otpStore[phoneNumber]
 
+  const token = generateToken(user._id)
   res.json({
-    _id: user._id,
-    name: user.name,
-    phoneNumber: user.phoneNumber,
-    role: user.role,
-    location: user.location,
-    token: generateToken(user._id)
+    token,
+    user: {
+      _id: user._id,
+      name: user.name,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      location: user.location,
+      isVerified: user.isVerified,
+      verificationStatus: user.verificationStatus
+    }
   })
 }
 
 // @desc   Get current logged in user
 // @route  GET /api/auth/me
 const getMe = async (req, res) => {
-  res.json(req.user)
+  const user = await User.findById(req.user._id).select('-__v')
+  res.json(user)
 }
 
 // @desc   Update profile
 // @route  PATCH /api/auth/profile
 const updateProfile = async (req, res) => {
   const { name, location } = req.body
-
-  if (!name || !name.trim()) {
-    return res.status(400).json({ message: 'Name is required' })
-  }
-
   const user = await User.findByIdAndUpdate(
     req.user._id,
-    { name: name.trim(), location: location || '' },
+    { name, location },
     { new: true }
-  )
-
+  ).select('-__v')
   res.json(user)
 }
 
-// Farmer requests verification
+// @desc   Farmer requests verification
+// @route  PATCH /api/auth/request-verification
 const requestVerification = async (req, res) => {
   const user = await User.findById(req.user._id)
   if (user.verificationStatus === 'verified') {
@@ -146,7 +130,8 @@ const requestVerification = async (req, res) => {
   res.json({ message: 'Verification requested', verificationStatus: 'pending' })
 }
 
-// Admin verifies a farmer
+// @desc   Admin verifies or rejects a farmer
+// @route  PATCH /api/auth/admin/verify/:userId
 const verifyFarmer = async (req, res) => {
   const { status } = req.body // 'verified' or 'rejected'
   const user = await User.findById(req.params.userId)
@@ -156,7 +141,13 @@ const verifyFarmer = async (req, res) => {
   await user.save()
   res.json({ message: `Farmer ${status}`, user })
 }
+
 module.exports = {
-  sendOTP, register, login, getMe, updateProfile,
-  requestVerification, verifyFarmer
+  sendOTP,
+  register,
+  login,
+  getMe,
+  updateProfile,
+  requestVerification,
+  verifyFarmer
 }
