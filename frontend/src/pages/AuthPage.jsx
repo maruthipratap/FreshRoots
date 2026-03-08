@@ -63,10 +63,10 @@ export default function AuthPage({ mode }) {
           otp: form.otp
         })
       }
-      const { token, ...userData } = res.data
-      login(userData, token)
-      toast.success(`Welcome, ${userData.name}! 🌱`)
-      navigate(userData.role === 'farmer' ? '/farmer/dashboard' : '/browse')
+      const { token, user } = res.data
+      login(user, token)
+      toast.success(`Welcome, ${user.name}! 🌱`)
+      navigate(user.role === 'farmer' ? '/farmer/dashboard' : '/browse')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Something went wrong')
     } finally {

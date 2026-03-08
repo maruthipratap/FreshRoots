@@ -19,9 +19,13 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const login = (userData, userToken) => {
-    setUser(userData)
+    //console.log('Login called with:', userData)
+    const userObj = userData.user || userData
+    const tokenStr = userToken || userData.token
+
+    setUser(userObj)
     setToken(userToken)
-    localStorage.setItem('fr_user', JSON.stringify(userData))
+    localStorage.setItem('fr_user', JSON.stringify(userObj))
     localStorage.setItem('fr_token', userToken)
   }
 
