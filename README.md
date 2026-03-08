@@ -6,7 +6,7 @@ FreshRoots is a full-stack farmer-to-buyer marketplace where farmers sell their 
 
 ## 🌐 Live Demo
 
-- **App:** https://fresh-roots-kappa.vercel.app
+- **App:** https://freshrootsfarm.vercel.app
 - **API:** https://freshroots-api.onrender.com
 
 ## 📸 Features
