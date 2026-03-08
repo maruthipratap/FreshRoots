@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 
 const categoryEmoji = {
   'vegetables': '🥦',
@@ -10,11 +11,59 @@ const categoryEmoji = {
   'farm-made products': '🫙'
 }
 
+// Countdown timer component
+function CountdownTimer({ endDate }) {
+  const calculateTimeLeft = () => {
+    const diff = new Date(endDate) - new Date()
+    if (diff <= 0) return null
+    return {
+      days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((diff / 1000 / 60) % 60)
+    }
+  }
+
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft())
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft())
+    }, 60000) // update every minute
+    return () => clearInterval(timer)
+  }, [endDate])
+
+  if (!timeLeft) return <span className="text-red-500 text-xs font-bold">Expired</span>
+
+  return (
+    <span className="text-xs font-bold text-orange-600">
+      ⏰ {timeLeft.days > 0 ? `${timeLeft.days}d ` : ''}{timeLeft.hours}h {timeLeft.minutes}m left
+    </span>
+  )
+}
+
 export default function ProductCard({ product }) {
   const emoji = categoryEmoji[product.category] || '🌿'
 
+  // Check if seasonal deal is still active
+  const isSeasonalActive = product.isSeasonal &&
+    product.seasonalPrice &&
+    product.seasonEnd &&
+    new Date(product.seasonEnd) > new Date()
+
+  const displayPrice = isSeasonalActive ? product.seasonalPrice : product.pricePerUnit
+  const discount = isSeasonalActive
+    ? Math.round(((product.pricePerUnit - product.seasonalPrice) / product.pricePerUnit) * 100)
+    : 0
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col hover:shadow-md transition hover:-translate-y-1">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col hover:shadow-md transition hover:-translate-y-1 relative">
+
+      {/* Seasonal Deal Banner */}
+      {isSeasonalActive && (
+        <div className="absolute top-3 left-3 z-10 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+          🔥 {discount}% OFF
+        </div>
+      )}
 
       {/* Image or emoji */}
       <div className="w-full h-36 bg-green-50 rounded-xl flex items-center justify-center text-6xl mb-4 overflow-hidden">
@@ -39,6 +88,13 @@ export default function ProductCard({ product }) {
             {product.category}
           </span>
         </div>
+
+        {/* Seasonal countdown */}
+        {isSeasonalActive && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 mb-3">
+            <CountdownTimer endDate={product.seasonEnd} />
+          </div>
+        )}
 
         {/* Description */}
         {product.description && (
@@ -71,12 +127,26 @@ export default function ProductCard({ product }) {
       {/* Price + Order button */}
       <div className="flex items-center justify-between mt-auto">
         <div>
-          <span className="text-2xl font-bold text-green-700">₹{product.pricePerUnit}</span>
-          <span className="text-gray-500 text-sm">/{product.unit}</span>
+          {isSeasonalActive ? (
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-bold text-orange-600">₹{displayPrice}</span>
+              <span className="text-sm text-gray-400 line-through">₹{product.pricePerUnit}</span>
+              <span className="text-gray-500 text-sm">/{product.unit}</span>
+            </div>
+          ) : (
+            <div>
+              <span className="text-2xl font-bold text-green-700">₹{product.pricePerUnit}</span>
+              <span className="text-gray-500 text-sm">/{product.unit}</span>
+            </div>
+          )}
         </div>
         <Link
           to={`/product/${product._id}`}
-          className="bg-green-700 hover:bg-green-800 text-white text-sm font-semibold px-4 py-2 rounded-xl transition"
+          className={`text-white text-sm font-semibold px-4 py-2 rounded-xl transition ${
+            isSeasonalActive
+              ? 'bg-orange-500 hover:bg-orange-600'
+              : 'bg-green-700 hover:bg-green-800'
+          }`}
         >
           Order Now
         </Link>

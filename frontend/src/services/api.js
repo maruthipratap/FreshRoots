@@ -35,5 +35,6 @@ export const updateOrderStatus = (id, status) => api.patch(`/orders/${id}/status
 export const updatePaymentStatus = (id) => api.patch(`/orders/${id}/payment`)
 export const requestVerification = () => api.patch('/auth/request-verification')
 export const adminVerifyFarmer = (userId, status) => api.patch(`/auth/admin/verify/${userId}`, { status })
+export const setSeasonalDeal = (id, data) => api.patch(`/products/${id}/seasonal`, data)
 
 export default api

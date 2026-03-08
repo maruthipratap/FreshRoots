@@ -44,6 +44,18 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  isSeasonal: {
+    type: Boolean,
+    default: false
+  },
+  seasonalPrice: {
+    type: Number,
+    default: null
+  },
+  seasonEnd: {
+    type: Date,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

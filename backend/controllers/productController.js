@@ -102,11 +102,32 @@ const deleteProduct = async (req, res) => {
   res.json({ message: 'Product deleted successfully' })
 }
 
+// @desc   Set or remove seasonal deal on a product
+// @route  PATCH /api/products/:id/seasonal
+const setSeasonalDeal = async (req, res) => {
+  const { isSeasonal, seasonalPrice, seasonEnd } = req.body
+
+  const product = await Product.findById(req.params.id)
+  if (!product) return res.status(404).json({ message: 'Product not found' })
+
+  if (product.farmerId.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ message: 'Not authorized' })
+  }
+
+  product.isSeasonal = isSeasonal
+  product.seasonalPrice = isSeasonal ? seasonalPrice : null
+  product.seasonEnd = isSeasonal ? new Date(seasonEnd) : null
+  await product.save()
+
+  res.json({ message: isSeasonal ? 'Seasonal deal set!' : 'Seasonal deal removed', product })
+}
+
 module.exports = {
   addProduct,
   getProducts,
   getProductById,
   getProductsByFarmer,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  setSeasonalDeal
 }

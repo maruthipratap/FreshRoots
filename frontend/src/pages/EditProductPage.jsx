@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { getProductById, updateProduct } from '../services/api'
+import { getProductById, updateProduct, setSeasonalDeal } from '../services/api'
 
 const categories = ['vegetables', 'fruits', 'milk & dairy', 'meat', 'eggs', 'crops', 'farm-made products']
 const units = ['kg', 'litre', 'pieces', 'dozen', 'gram', 'bunch']
@@ -11,6 +11,7 @@ export default function EditProductPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingSeasonal, setSavingSeasonal] = useState(false)
   const [form, setForm] = useState({
     name: '',
     category: '',
@@ -20,8 +21,12 @@ export default function EditProductPage() {
     pricePerUnit: '',
     isActive: true
   })
+  const [seasonal, setSeasonal] = useState({
+    isSeasonal: false,
+    seasonalPrice: '',
+    seasonEnd: ''
+  })
 
-  // Load existing product data when page opens
   useEffect(() => {
     fetchProduct()
   }, [id])
@@ -30,7 +35,6 @@ export default function EditProductPage() {
     try {
       const res = await getProductById(id)
       const p = res.data
-      // Pre-fill the form with existing data
       setForm({
         name: p.name,
         category: p.category,
@@ -39,6 +43,12 @@ export default function EditProductPage() {
         unit: p.unit,
         pricePerUnit: p.pricePerUnit,
         isActive: p.isActive
+      })
+      // Set seasonal state after product loads
+      setSeasonal({
+        isSeasonal: p.isSeasonal || false,
+        seasonalPrice: p.seasonalPrice || '',
+        seasonEnd: p.seasonEnd ? new Date(p.seasonEnd).toISOString().split('T')[0] : ''
       })
     } catch {
       toast.error('Product not found')
@@ -71,6 +81,22 @@ export default function EditProductPage() {
       toast.error(err.response?.data?.message || 'Failed to update product')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleSeasonalSave = async () => {
+    if (seasonal.isSeasonal && (!seasonal.seasonalPrice || !seasonal.seasonEnd)) {
+      toast.error('Enter seasonal price and end date')
+      return
+    }
+    setSavingSeasonal(true)
+    try {
+      await setSeasonalDeal(id, seasonal)
+      toast.success(seasonal.isSeasonal ? '🔥 Seasonal deal set!' : 'Seasonal deal removed')
+    } catch {
+      toast.error('Failed to update seasonal deal')
+    } finally {
+      setSavingSeasonal(false)
     }
   }
 
@@ -230,6 +256,75 @@ export default function EditProductPage() {
           <div className={`text-xs mt-2 font-semibold ${form.isActive ? 'text-green-600' : 'text-red-500'}`}>
             {form.isActive ? '✅ Visible to buyers' : '🚫 Hidden from buyers'}
           </div>
+        </div>
+
+        {/* Seasonal Deal */}
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-semibold text-orange-800">🔥 Seasonal Deal</div>
+              <div className="text-xs text-orange-600">Offer a limited-time discounted price</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSeasonal({ ...seasonal, isSeasonal: !seasonal.isSeasonal })}
+              className={`w-12 h-6 rounded-full transition-colors ${
+                seasonal.isSeasonal ? 'bg-orange-500' : 'bg-gray-300'
+              }`}
+            >
+              <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${
+                seasonal.isSeasonal ? 'translate-x-6' : 'translate-x-0'
+              }`} />
+            </button>
+          </div>
+
+          {seasonal.isSeasonal && (
+            <>
+              <div>
+                <label className="block text-sm font-semibold text-orange-700 mb-1">
+                  Seasonal Price (₹)
+                </label>
+                <input
+                  type="number"
+                  value={seasonal.seasonalPrice}
+                  onChange={(e) => setSeasonal({ ...seasonal, seasonalPrice: e.target.value })}
+                  placeholder="Discounted price"
+                  className="w-full border border-orange-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-orange-700 mb-1">
+                  Deal Ends On
+                </label>
+                <input
+                  type="date"
+                  value={seasonal.seasonEnd}
+                  onChange={(e) => setSeasonal({ ...seasonal, seasonEnd: e.target.value })}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full border border-orange-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleSeasonalSave}
+                disabled={savingSeasonal}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-xl transition"
+              >
+                {savingSeasonal ? '⏳ Saving...' : '🔥 Save Seasonal Deal'}
+              </button>
+            </>
+          )}
+
+          {!seasonal.isSeasonal && (
+            <button
+              type="button"
+              onClick={handleSeasonalSave}
+              disabled={savingSeasonal}
+              className="w-full bg-gray-200 hover:bg-gray-300 text-gray-600 font-semibold py-2 rounded-xl transition text-sm"
+            >
+              {savingSeasonal ? '⏳ Removing...' : 'Remove Seasonal Deal'}
+            </button>
+          )}
         </div>
 
         <button
