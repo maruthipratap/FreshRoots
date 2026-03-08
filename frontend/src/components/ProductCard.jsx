@@ -11,13 +11,12 @@ const categoryEmoji = {
 }
 
 export default function ProductCard({ product }) {
-  console.log(product.name, product.images)
   const emoji = categoryEmoji[product.category] || '🌿'
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col hover:shadow-md transition hover:-translate-y-1">
 
-      {/* Emoji placeholder */}
+      {/* Image or emoji */}
       <div className="w-full h-36 bg-green-50 rounded-xl flex items-center justify-center text-6xl mb-4 overflow-hidden">
         {product.images && product.images.length > 0 && product.images[0] ? (
           <img
@@ -53,11 +52,18 @@ export default function ProductCard({ product }) {
           📦 {product.quantityAvailable} {product.unit} available
         </div>
 
-        {/* Farmer info */}
+        {/* Farmer info + Verified badge */}
         {product.farmerId && (
-          <div className="text-sm text-gray-500 mb-4">
-            👨‍🌾 {product.farmerId.name}
-            {product.farmerId.location && ` · 📍 ${product.farmerId.location}`}
+          <div className="flex items-center gap-2 flex-wrap mb-4">
+            <span className="text-sm text-gray-500">
+              👨‍🌾 {product.farmerId.name}
+              {product.farmerId.location && ` · 📍 ${product.farmerId.location}`}
+            </span>
+            {product.farmerId.isVerified && (
+              <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-semibold">
+                ✅ Verified
+              </span>
+            )}
           </div>
         )}
       </div>

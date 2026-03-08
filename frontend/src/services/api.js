@@ -33,5 +33,7 @@ export const getFarmerOrders = (farmerId) => api.get(`/orders/farmer/${farmerId}
 export const getBuyerOrders = (buyerId) => api.get(`/orders/buyer/${buyerId}`)
 export const updateOrderStatus = (id, status) => api.patch(`/orders/${id}/status`, { status })
 export const updatePaymentStatus = (id) => api.patch(`/orders/${id}/payment`)
+export const requestVerification = () => api.patch('/auth/request-verification')
+export const adminVerifyFarmer = (userId, status) => api.patch(`/auth/admin/verify/${userId}`, { status })
 
 export default api

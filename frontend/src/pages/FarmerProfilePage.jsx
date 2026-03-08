@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { getProductsByFarmer, getFarmerOrders } from '../services/api'
+import { getProductsByFarmer, getFarmerOrders, requestVerification } from '../services/api'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api'
@@ -12,6 +12,7 @@ export default function FarmerProfilePage() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [verificationStatus, setVerificationStatus] = useState(user.verificationStatus || 'none')
   const [form, setForm] = useState({
     name: user.name,
     location: user.location || ''
@@ -44,7 +45,6 @@ export default function FarmerProfilePage() {
     setSaving(true)
     try {
       const res = await api.patch(`/auth/profile`, form)
-      // Update user in context + localStorage
       login(res.data, token)
       toast.success('Profile updated! ✅')
       setEditing(false)
@@ -55,11 +55,20 @@ export default function FarmerProfilePage() {
     }
   }
 
-  // Stats calculations
+  const handleRequestVerification = async () => {
+    try {
+      await requestVerification()
+      setVerificationStatus('pending')
+      toast.success('Verification requested! We will review your profile. ✅')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to request verification')
+    }
+  }
+
+  // Stats
   const totalRevenue = orders
     .filter(o => o.paymentStatus === 'paid')
     .reduce((sum, o) => sum + o.totalPrice, 0)
-
   const completedOrders = orders.filter(o => o.status === 'completed').length
   const pendingOrders = orders.filter(o => o.status === 'pending').length
 
@@ -104,7 +113,20 @@ export default function FarmerProfilePage() {
                 </div>
               ) : (
                 <>
-                  <h2 className="text-2xl font-bold text-gray-800">{user.name}</h2>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-2xl font-bold text-gray-800">{user.name}</h2>
+                    {/* Verification badge next to name */}
+                    {verificationStatus === 'verified' && (
+                      <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">
+                        ✅ Verified
+                      </span>
+                    )}
+                    {verificationStatus === 'pending' && (
+                      <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full">
+                        ⏳ Pending
+                      </span>
+                    )}
+                  </div>
                   <p className="text-gray-500">📍 {user.location || 'Location not set'}</p>
                   <p className="text-gray-500 text-sm">📱 {user.phoneNumber}</p>
                 </>
@@ -144,14 +166,42 @@ export default function FarmerProfilePage() {
           </div>
         </div>
 
-        {/* Role badge */}
-        <div className="mt-4 flex gap-2">
+        {/* Role badge + Verification status */}
+        <div className="mt-4 flex gap-2 flex-wrap items-center">
           <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
             🌾 Farmer
           </span>
           <span className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">
             Member since {new Date(user.createdAt).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
           </span>
+
+          {/* Verification action */}
+          {verificationStatus === 'none' && (
+            <button
+              onClick={handleRequestVerification}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1 rounded-full transition"
+            >
+              🔰 Request Verification
+            </button>
+          )}
+          {verificationStatus === 'pending' && (
+            <span className="bg-yellow-100 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full">
+              ⏳ Verification Under Review
+            </span>
+          )}
+          {verificationStatus === 'verified' && (
+            <span className="bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+              ✅ Verified Farmer
+            </span>
+          )}
+          {verificationStatus === 'rejected' && (
+            <button
+              onClick={handleRequestVerification}
+              className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full transition"
+            >
+              ❌ Rejected — Try Again
+            </button>
+          )}
         </div>
       </div>
 
@@ -174,9 +224,7 @@ export default function FarmerProfilePage() {
       {/* Active Products */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-800">
-            My Products ({products.length})
-          </h3>
+          <h3 className="text-lg font-bold text-gray-800">My Products ({products.length})</h3>
           <Link
             to="/farmer/add-product"
             className="text-sm bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-xl font-semibold transition"
@@ -184,7 +232,6 @@ export default function FarmerProfilePage() {
             + Add New
           </Link>
         </div>
-
         {products.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <div className="text-4xl mb-2">🌱</div>
@@ -193,17 +240,12 @@ export default function FarmerProfilePage() {
         ) : (
           <div className="space-y-3">
             {products.map((p) => (
-              <div
-                key={p._id}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
-              >
+              <div key={p._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-gray-800">{p.name}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                      p.isActive
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-500'
+                      p.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                     }`}>
                       {p.isActive ? 'Active' : 'Inactive'}
                     </span>
@@ -227,18 +269,13 @@ export default function FarmerProfilePage() {
       {/* Recent Orders */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-800">
-            Recent Orders
-          </h3>
-          <span className="text-sm text-gray-500">
-            {pendingOrders > 0 && (
-              <span className="bg-yellow-100 text-yellow-700 text-xs font-semibold px-3 py-1 rounded-full">
-                ⏳ {pendingOrders} pending
-              </span>
-            )}
-          </span>
+          <h3 className="text-lg font-bold text-gray-800">Recent Orders</h3>
+          {pendingOrders > 0 && (
+            <span className="bg-yellow-100 text-yellow-700 text-xs font-semibold px-3 py-1 rounded-full">
+              ⏳ {pendingOrders} pending
+            </span>
+          )}
         </div>
-
         {orders.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <div className="text-4xl mb-2">📋</div>
@@ -249,9 +286,7 @@ export default function FarmerProfilePage() {
             {orders.slice(0, 5).map((o) => (
               <div key={o._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                 <div>
-                  <div className="font-semibold text-gray-800 text-sm">
-                    {o.productId?.name}
-                  </div>
+                  <div className="font-semibold text-gray-800 text-sm">{o.productId?.name}</div>
                   <div className="text-xs text-gray-500 mt-1">
                     👤 {o.buyerId?.name} · ₹{o.totalPrice}
                   </div>
