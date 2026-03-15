@@ -142,12 +142,28 @@ const verifyFarmer = async (req, res) => {
   res.json({ message: `Farmer ${status}`, user })
 }
 
+// @desc   Update farm story
+// @route  PATCH /api/auth/farm-story
+const updateFarmStory = async (req, res) => {
+  const { farmName, bio, images, videoUrl, establishedYear } = req.body
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { farmStory: { farmName, bio, images, videoUrl, establishedYear } },
+    { new: true }
+  )
+  res.json({ message: 'Farm story updated!', farmStory: user.farmStory })
+}
+
+// @desc   Get farm story by farmer ID
+// @route  GET /api/auth/farm-story/:farmerId
+const getFarmStory = async (req, res) => {
+  const user = await User.findById(req.params.farmerId)
+    .select('name location phoneNumber isVerified verificationStatus farmStory createdAt')
+  if (!user) return res.status(404).json({ message: 'Farmer not found' })
+  res.json(user)
+}
 module.exports = {
-  sendOTP,
-  register,
-  login,
-  getMe,
-  updateProfile,
-  requestVerification,
-  verifyFarmer
+  sendOTP, register, login, getMe, updateProfile,
+  requestVerification, verifyFarmer,
+  updateFarmStory, getFarmStory
 }

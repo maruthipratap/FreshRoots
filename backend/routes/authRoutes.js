@@ -2,13 +2,8 @@ const express = require('express')
 const router = express.Router()
 const { protect, farmerOnly } = require('../middleware/authMiddleware')
 const {
-  sendOTP,
-  register,
-  login,
-  getMe,
-  updateProfile,
-  requestVerification,
-  verifyFarmer
+  sendOTP, register, login, getMe, updateProfile,
+  requestVerification, verifyFarmer, updateFarmStory
 } = require('../controllers/authController')
 
 // Public routes
@@ -24,4 +19,7 @@ router.patch('/profile', protect, updateProfile)
 router.patch('/request-verification', protect, farmerOnly, requestVerification)
 router.patch('/admin/verify/:userId', protect, verifyFarmer)
 
+// farm story
+router.patch('/farm-story', protect, farmerOnly, updateFarmStory)
+router.get('/farm-story/:farmerId', getFarmStory)
 module.exports = router

@@ -31,6 +31,14 @@ const userSchema = new mongoose.Schema({
     enum: ['none', 'pending', 'verified', 'rejected'],
     default: 'none'
   },
+  farmStory: {
+    farmName: { type: String, default: '' },
+    bio: { type: String, default: '' },
+    images: { type: [String], default: [] },
+    videoUrl: { type: String, default: '' },
+    establishedYear: { type: Number, default: null },
+    location: { type: String, default: '' }
+  },
   createdAt: {
     type: Date,
     default: Date.now
