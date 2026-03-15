@@ -41,4 +41,10 @@ export const getFarmStory = (farmerId) => api.get(`/auth/farm-story/${farmerId}`
 export const geocodeLocation = (city) => 
   fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`)
     .then(res => res.json())
+export const subscribeToProduct = (productId) => api.post(`/notifications/subscribe/${productId}`)
+export const unsubscribeFromProduct = (productId) => api.delete(`/notifications/subscribe/${productId}`)
+export const getNotifications = () => api.get('/notifications')
+export const getUnreadCount = () => api.get('/notifications/unread-count')
+export const markAsRead = (id) => api.patch(`/notifications/${id}/read`)
+export const markAllAsRead = () => api.patch('/notifications/read-all')
 export default api

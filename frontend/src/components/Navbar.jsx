@@ -1,11 +1,31 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { getUnreadCount } from '../services/api'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (user) {
+      fetchUnreadCount()
+      // Poll every 30 seconds
+      const interval = setInterval(fetchUnreadCount, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [user])
+
+  const fetchUnreadCount = async () => {
+    try {
+      const res = await getUnreadCount()
+      setUnreadCount(res.data.count)
+    } catch {
+      // silent fail
+    }
+  }
 
   const handleLogout = () => {
     logout()
@@ -55,6 +75,17 @@ export default function Navbar() {
                   </Link>
                 </>
               )}
+
+              {/* Notification Bell */}
+              <Link to="/notifications" className="relative">
+                <span className="text-xl">🔔</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+
               <button onClick={handleLogout} className="text-green-300 hover:text-white text-sm transition">
                 Logout
               </button>
@@ -121,6 +152,16 @@ export default function Navbar() {
                   <Link to="/orders" onClick={closeMenu}
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     📋 My Orders
+                  </Link>
+                  {/* Notifications in mobile menu */}
+                  <Link to="/notifications" onClick={closeMenu}
+                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
+                    🔔 Notifications
+                    {unreadCount > 0 && (
+                      <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                        {unreadCount}
+                      </span>
+                    )}
                   </Link>
                 </>
               )}

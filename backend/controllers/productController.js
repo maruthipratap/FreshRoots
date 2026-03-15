@@ -1,4 +1,5 @@
 const Product = require('../models/Product')
+const { sendRestockNotifications } = require('./notificationController')
 
 // @desc   Add a new product
 // @route  POST /api/products
@@ -75,11 +76,18 @@ const updateProduct = async (req, res) => {
     return res.status(403).json({ message: 'Not authorized to update this product' })
   }
 
+  const wasOutOfStock = product.quantityAvailable === 0
+  
   const updated = await Product.findByIdAndUpdate(
     req.params.id,
     req.body,
     { new: true }
   )
+
+  // Send restock notifications if product was out of stock and now has stock
+  if (wasOutOfStock && updated.quantityAvailable > 0) {
+    await sendRestockNotifications(updated)
+  }
 
   res.json(updated)
 }

@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { getDistanceKm } from '../utils/distance'
+import { useAuth } from '../context/AuthContext'
+import { subscribeToProduct, unsubscribeFromProduct } from '../services/api'
+import toast from 'react-hot-toast'
 
 const categoryEmoji = {
   'vegetables': '🥦',
@@ -43,6 +46,8 @@ function CountdownTimer({ endDate }) {
 }
 
 export default function ProductCard({ product, userCoords }) {
+  const { user } = useAuth()
+  const [subscribed, setSubscribed] = useState(false)
   const emoji = categoryEmoji[product.category] || '🌿'
 
   // Check if seasonal deal is still active
@@ -55,6 +60,24 @@ export default function ProductCard({ product, userCoords }) {
   const discount = isSeasonalActive
     ? Math.round(((product.pricePerUnit - product.seasonalPrice) / product.pricePerUnit) * 100)
     : 0
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      if (subscribed) {
+        await unsubscribeFromProduct(product._id)
+        setSubscribed(false)
+        toast.success('Unsubscribed from alerts')
+      } else {
+        await subscribeToProduct(product._id)
+        setSubscribed(true)
+        toast.success('You will be notified when restocked! 🔔')
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to subscribe')
+    }
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col hover:shadow-md transition hover:-translate-y-1 relative">
@@ -131,6 +154,7 @@ export default function ProductCard({ product, userCoords }) {
                 )} km away
               </span>
             )}
+            {/* Farm Story button */}
             <Link
               to={`/farm/${product.farmerId._id}`}
               onClick={(e) => e.stopPropagation()}
@@ -141,6 +165,20 @@ export default function ProductCard({ product, userCoords }) {
           </div>
         )}
       </div>
+
+      {/* Notify Me button for low/out of stock */}
+      {user?.role === 'buyer' && product.quantityAvailable <= 5 && (
+        <button
+          onClick={handleSubscribe}
+          className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition mb-2 ${
+            subscribed
+              ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          {subscribed ? '🔔 Notified' : '🔕 Notify Me'}
+        </button>
+      )}
 
       {/* Price + Order button */}
       <div className="flex items-center justify-between mt-auto">

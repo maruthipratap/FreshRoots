@@ -44,6 +44,11 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  subscribers: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'User',
+    default: []
+  },
   isSeasonal: {
     type: Boolean,
     default: false
