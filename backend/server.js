@@ -44,3 +44,7 @@ app.use('/api/harvest', harvestRoutes)
 //Bulk order negotiation
 const negotiationRoutes = require('./routes/negotiationRoutes')
 app.use('/api/negotiations', negotiationRoutes)
+
+// subscription box
+const subscriptionRoutes = require('./routes/subscriptionRoutes')
+app.use('/api/subscriptions', subscriptionRoutes)

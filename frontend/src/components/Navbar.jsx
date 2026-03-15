@@ -63,11 +63,14 @@ export default function Navbar() {
                   <Link to="/farmer/harvests" className="text-green-200 hover:text-white text-sm transition">
                     Harvests
                   </Link>
-                  <Link to="/farmer/profile" className="text-green-200 hover:text-white text-sm transition">
-                    Profile
+                  <Link to="/farmer/subscription-boxes" className="text-green-200 hover:text-white text-sm transition">
+                    Boxes
                   </Link>
                   <Link to="/farmer/negotiations" className="text-green-200 hover:text-white text-sm transition">
                     Deals
+                  </Link>
+                  <Link to="/farmer/profile" className="text-green-200 hover:text-white text-sm transition">
+                    Profile
                   </Link>
                 </>
               ) : (
@@ -78,8 +81,11 @@ export default function Navbar() {
                   <Link to="/harvests" className="text-green-200 hover:text-white text-sm transition">
                     Harvests
                   </Link>
+                  <Link to="/subscription-boxes" className="text-green-200 hover:text-white text-sm transition">
+                    Boxes
+                  </Link>
                   <Link to="/orders" className="text-green-200 hover:text-white text-sm transition">
-                    My Orders
+                    Orders
                   </Link>
                   <Link to="/buyer/negotiations" className="text-green-200 hover:text-white text-sm transition">
                     Deals
@@ -135,7 +141,9 @@ export default function Navbar() {
                 </div>
                 <div>
                   <div className="font-semibold">{user.name}</div>
-                  <div className="text-green-300 text-xs capitalize">{user.role} · {user.location || 'No location'}</div>
+                  <div className="text-green-300 text-xs capitalize">
+                    {user.role} · {user.location || 'No location'}
+                  </div>
                 </div>
               </div>
 
@@ -153,10 +161,13 @@ export default function Navbar() {
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     ➕ Add Product
                   </Link>
-                  {/* Harvest Calendar in mobile menu */}
                   <Link to="/farmer/harvests" onClick={closeMenu}
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     📅 Harvest Calendar
+                  </Link>
+                  <Link to="/farmer/subscription-boxes" onClick={closeMenu}
+                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
+                    📦 Subscription Boxes
                   </Link>
                   <Link to="/farmer/negotiations" onClick={closeMenu}
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
@@ -173,6 +184,14 @@ export default function Navbar() {
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     📅 Upcoming Harvests
                   </Link>
+                  <Link to="/subscription-boxes" onClick={closeMenu}
+                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
+                    📦 Subscription Boxes
+                  </Link>
+                  <Link to="/my-subscriptions" onClick={closeMenu}
+                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
+                    🔄 My Subscriptions
+                  </Link>
                   <Link to="/orders" onClick={closeMenu}
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     📋 My Orders
@@ -180,8 +199,7 @@ export default function Navbar() {
                   <Link to="/buyer/negotiations" onClick={closeMenu}
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     🤝 My Deals
-                  </Link>                  
-                  {/* Notifications in mobile menu */}
+                  </Link>
                   <Link to="/notifications" onClick={closeMenu}
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     🔔 Notifications

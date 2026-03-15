@@ -20,6 +20,10 @@ import HarvestBrowsePage from './pages/HarvestBrowsePage'
 import NegotiationPage from './pages/NegotiationPage'
 import FarmerNegotiationsPage from './pages/FarmerNegotiationsPage'
 import BuyerNegotiationsPage from './pages/BuyerNegotiationsPage'
+import CreateSubscriptionBoxPage from './pages/CreateSubscriptionBoxPage'
+import SubscriptionBoxesPage from './pages/SubscriptionBoxesPage'
+import MySubscriptionsPage from './pages/MySubscriptionsPage'
+import FarmerSubscriptionsPage from './pages/FarmerSubscriptionsPage'
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -80,6 +84,10 @@ function AppContent() {
         <Route path="/product/:id/negotiate" element={<NegotiationPage />} />
         <Route path="/farmer/negotiations" element={<FarmerNegotiationsPage />} />
         <Route path="/buyer/negotiations" element={<BuyerNegotiationsPage />} />
+        <Route path="/farmer/create-box" element={<CreateSubscriptionBoxPage />} />
+        <Route path="/farmer/subscription-boxes" element={<FarmerSubscriptionsPage />} />
+        <Route path="/subscription-boxes" element={<SubscriptionBoxesPage />} />
+        <Route path="/my-subscriptions" element={<MySubscriptionsPage />} />
       </Routes>
     </div>
   )
