@@ -3,7 +3,7 @@ const router = express.Router()
 const { protect, farmerOnly } = require('../middleware/authMiddleware')
 const {
   sendOTP, register, login, getMe, updateProfile,
-  requestVerification, verifyFarmer, updateFarmStory
+  requestVerification, verifyFarmer, updateFarmStory,getFarmStory
 } = require('../controllers/authController')
 
 // Public routes
