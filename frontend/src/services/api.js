@@ -53,4 +53,9 @@ export const getFarmerHarvests = (farmerId) => api.get(`/harvest/farmer/${farmer
 export const prebookHarvest = (id, data) => api.post(`/harvest/${id}/prebook`, data)
 export const updateHarvestStatus = (id, status) => api.patch(`/harvest/${id}/status`, { status })
 export const deleteHarvest = (id) => api.delete(`/harvest/${id}`)
+export const createNegotiation = (data) => api.post('/negotiations', data)
+export const getBuyerNegotiations = () => api.get('/negotiations/buyer')
+export const getFarmerNegotiations = () => api.get('/negotiations/farmer')
+export const respondToNegotiation = (id, data) => api.patch(`/negotiations/${id}/respond`, data)
+export const buyerRespondToNegotiation = (id, data) => api.patch(`/negotiations/${id}/buyer-respond`, data)
 export default api

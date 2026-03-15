@@ -40,3 +40,7 @@ app.use('/api/notifications', notificationRoutes)
 // Harvest calender
 const harvestRoutes = require('./routes/harvestRoutes')
 app.use('/api/harvest', harvestRoutes)
+
+//Bulk order negotiation
+const negotiationRoutes = require('./routes/negotiationRoutes')
+app.use('/api/negotiations', negotiationRoutes)

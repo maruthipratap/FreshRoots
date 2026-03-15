@@ -17,6 +17,9 @@ import NotificationsPage from './pages/NotificationsPage'
 import HarvestCalendarPage from './pages/HarvestCalendarPage'
 import AddHarvestPage from './pages/AddHarvestPage'
 import HarvestBrowsePage from './pages/HarvestBrowsePage'
+import NegotiationPage from './pages/NegotiationPage'
+import FarmerNegotiationsPage from './pages/FarmerNegotiationsPage'
+import BuyerNegotiationsPage from './pages/BuyerNegotiationsPage'
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -74,6 +77,9 @@ function AppContent() {
         <Route path="/farmer/harvests" element={<HarvestCalendarPage />} />
         <Route path="/farmer/add-harvest" element={<AddHarvestPage />} />
         <Route path="/harvests" element={<HarvestBrowsePage />} />
+        <Route path="/product/:id/negotiate" element={<NegotiationPage />} />
+        <Route path="/farmer/negotiations" element={<FarmerNegotiationsPage />} />
+        <Route path="/buyer/negotiations" element={<BuyerNegotiationsPage />} />
       </Routes>
     </div>
   )

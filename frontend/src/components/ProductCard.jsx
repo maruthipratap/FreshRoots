@@ -196,16 +196,26 @@ export default function ProductCard({ product, userCoords }) {
             </div>
           )}
         </div>
-        <Link
-          to={`/product/${product._id}`}
-          className={`text-white text-sm font-semibold px-4 py-2 rounded-xl transition ${
-            isSeasonalActive
-              ? 'bg-orange-500 hover:bg-orange-600'
-              : 'bg-green-700 hover:bg-green-800'
-          }`}
-        >
-          Order Now
-        </Link>
+        <div className="flex flex-col gap-1">
+          <Link
+            to={`/product/${product._id}`}
+            className={`text-white text-sm font-semibold px-4 py-2 rounded-xl transition ${
+              isSeasonalActive
+                ? 'bg-orange-500 hover:bg-orange-600'
+                : 'bg-green-700 hover:bg-green-800'
+            }`}
+          >
+            Order Now
+          </Link>
+          {user?.role === 'buyer' && (
+            <Link
+              to={`/product/${product._id}/negotiate`}
+              className="text-xs text-center text-green-600 hover:text-green-800 font-semibold bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-xl transition"
+            >
+              🤝 Negotiate
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   )

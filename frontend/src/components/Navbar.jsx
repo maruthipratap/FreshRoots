@@ -66,6 +66,9 @@ export default function Navbar() {
                   <Link to="/farmer/profile" className="text-green-200 hover:text-white text-sm transition">
                     Profile
                   </Link>
+                  <Link to="/farmer/negotiations" className="text-green-200 hover:text-white text-sm transition">
+                    Deals
+                  </Link>
                 </>
               ) : (
                 <>
@@ -77,6 +80,9 @@ export default function Navbar() {
                   </Link>
                   <Link to="/orders" className="text-green-200 hover:text-white text-sm transition">
                     My Orders
+                  </Link>
+                  <Link to="/buyer/negotiations" className="text-green-200 hover:text-white text-sm transition">
+                    Deals
                   </Link>
                 </>
               )}
@@ -152,6 +158,10 @@ export default function Navbar() {
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     📅 Harvest Calendar
                   </Link>
+                  <Link to="/farmer/negotiations" onClick={closeMenu}
+                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
+                    🤝 Bulk Deals
+                  </Link>
                 </>
               ) : (
                 <>
@@ -167,6 +177,10 @@ export default function Navbar() {
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     📋 My Orders
                   </Link>
+                  <Link to="/buyer/negotiations" onClick={closeMenu}
+                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
+                    🤝 My Deals
+                  </Link>                  
                   {/* Notifications in mobile menu */}
                   <Link to="/notifications" onClick={closeMenu}
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
