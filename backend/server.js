@@ -36,3 +36,7 @@ app.listen(PORT, () =>{
 // Notifications
 const notificationRoutes = require('./routes/notificationRoutes')
 app.use('/api/notifications', notificationRoutes)
+
+// Harvest calender
+const harvestRoutes = require('./routes/harvestRoutes')
+app.use('/api/harvest', harvestRoutes)

@@ -12,7 +12,6 @@ export default function Navbar() {
   useEffect(() => {
     if (user) {
       fetchUnreadCount()
-      // Poll every 30 seconds
       const interval = setInterval(fetchUnreadCount, 30000)
       return () => clearInterval(interval)
     }
@@ -61,6 +60,9 @@ export default function Navbar() {
                   <Link to="/farmer/dashboard" className="bg-white text-green-800 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-50 transition">
                     Dashboard
                   </Link>
+                  <Link to="/farmer/harvests" className="text-green-200 hover:text-white text-sm transition">
+                    Harvests
+                  </Link>
                   <Link to="/farmer/profile" className="text-green-200 hover:text-white text-sm transition">
                     Profile
                   </Link>
@@ -69,6 +71,9 @@ export default function Navbar() {
                 <>
                   <Link to="/browse" className="bg-white text-green-800 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-50 transition">
                     Browse
+                  </Link>
+                  <Link to="/harvests" className="text-green-200 hover:text-white text-sm transition">
+                    Harvests
                   </Link>
                   <Link to="/orders" className="text-green-200 hover:text-white text-sm transition">
                     My Orders
@@ -142,12 +147,21 @@ export default function Navbar() {
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     ➕ Add Product
                   </Link>
+                  {/* Harvest Calendar in mobile menu */}
+                  <Link to="/farmer/harvests" onClick={closeMenu}
+                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
+                    📅 Harvest Calendar
+                  </Link>
                 </>
               ) : (
                 <>
                   <Link to="/browse" onClick={closeMenu}
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     🌿 Browse Products
+                  </Link>
+                  <Link to="/harvests" onClick={closeMenu}
+                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
+                    📅 Upcoming Harvests
                   </Link>
                   <Link to="/orders" onClick={closeMenu}
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">

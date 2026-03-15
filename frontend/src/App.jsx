@@ -14,6 +14,9 @@ import FarmerProfilePage from './pages/FarmerProfilePage'
 import FarmStoryPage from './pages/FarmStoryPage'
 import FarmStoryViewPage from './pages/FarmStoryViewPage'
 import NotificationsPage from './pages/NotificationsPage'
+import HarvestCalendarPage from './pages/HarvestCalendarPage'
+import AddHarvestPage from './pages/AddHarvestPage'
+import HarvestBrowsePage from './pages/HarvestBrowsePage'
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -68,6 +71,9 @@ function AppContent() {
         <Route path="/farmer/farm-story" element={<FarmStoryPage />} />
         <Route path="/farm/:farmerId" element={<FarmStoryViewPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/farmer/harvests" element={<HarvestCalendarPage />} />
+        <Route path="/farmer/add-harvest" element={<AddHarvestPage />} />
+        <Route path="/harvests" element={<HarvestBrowsePage />} />
       </Routes>
     </div>
   )
