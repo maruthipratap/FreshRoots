@@ -202,6 +202,12 @@ export default function FarmerProfilePage() {
               ❌ Rejected — Try Again
             </button>
           )}
+          <Link
+            to="/farmer/farm-story"
+            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-3 py-1 rounded-full transition"
+          >
+            📸 Edit Farm Story
+          </Link>
         </div>
       </div>
 

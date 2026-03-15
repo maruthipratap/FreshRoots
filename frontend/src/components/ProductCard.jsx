@@ -120,6 +120,14 @@ export default function ProductCard({ product }) {
                 ✅ Verified
               </span>
             )}
+            {/* Farm Story button */}
+            <Link
+              to={`/farm/${product.farmerId._id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-semibold hover:bg-amber-200 transition"
+            >
+              🌾 Farm Story
+            </Link>
           </div>
         )}
       </div>
