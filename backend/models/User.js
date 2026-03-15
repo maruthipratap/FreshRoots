@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema({
     trim: true,
     default: ''
   },
+  coordinates: {
+    lat: { type: Number, default: null },
+    lng: { type: Number, default: null }
+  },
   isVerified: {
     type: Boolean,
     default: false

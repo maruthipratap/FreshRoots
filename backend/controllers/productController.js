@@ -34,7 +34,7 @@ const getProducts = async (req, res) => {
   if (search) query.name = { $regex: search, $options: 'i' }
 
   const products = await Product.find(query)
-    .populate('farmerId', 'name location phoneNumber isVerified')
+    .populate('farmerId', 'name location phoneNumber isVerified coordinates')
     .sort({ createdAt: -1 })
 
   res.json(products)
@@ -44,7 +44,7 @@ const getProducts = async (req, res) => {
 // @route  GET /api/products/:id
 const getProductById = async (req, res) => {
   const product = await Product.findById(req.params.id)
-    .populate('farmerId', 'name location phoneNumber isVerified')
+    .populate('farmerId', 'name location phoneNumber isVerified coordinates')
 
   if (!product) {
     return res.status(404).json({ message: 'Product not found' })

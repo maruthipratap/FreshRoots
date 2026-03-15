@@ -4,6 +4,7 @@ import { getProductsByFarmer, getFarmerOrders, requestVerification } from '../se
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api'
+import { geocodeLocation } from '../services/api'
 
 export default function FarmerProfilePage() {
   const { user, login, token } = useAuth()
@@ -44,7 +45,18 @@ export default function FarmerProfilePage() {
     }
     setSaving(true)
     try {
-      const res = await api.patch(`/auth/profile`, form)
+      // Geocode location to get coordinates
+      let coordinates = null
+      if (form.location) {
+        const results = await geocodeLocation(form.location)
+        if (results && results.length > 0) {
+          coordinates = {
+            lat: parseFloat(results[0].lat),
+            lng: parseFloat(results[0].lon)
+          }
+        }
+      }
+      const res = await api.patch('/auth/profile', { ...form, coordinates })
       login(res.data, token)
       toast.success('Profile updated! ✅')
       setEditing(false)

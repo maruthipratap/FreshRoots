@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { getProducts } from '../services/api'
+import { getProducts, geocodeLocation } from '../services/api'
 import ProductCard from '../components/ProductCard'
+import { getDistanceKm } from '../utils/distance'
 
 const categories = ['all', 'vegetables', 'fruits', 'milk & dairy', 'meat', 'eggs', 'crops', 'farm-made products']
 
@@ -16,15 +17,20 @@ export default function BrowsePage() {
   const [maxPrice, setMaxPrice] = useState('')
   const [showFilters, setShowFilters] = useState(false)
 
-  // Fetch when category changes
+  // Location states
+  const [locationInput, setLocationInput] = useState('')
+  const [userCoords, setUserCoords] = useState(null)
+  const [locating, setLocating] = useState(false)
+  const [nearbyOnly, setNearbyOnly] = useState(false)
+  const [nearbyRadius, setNearbyRadius] = useState(100) // km
+
   useEffect(() => {
     fetchProducts()
   }, [category])
 
-  // Apply filters locally whenever search/sort/price changes
   useEffect(() => {
     applyFilters()
-  }, [products, search, sortBy, maxPrice])
+  }, [products, search, sortBy, maxPrice, userCoords, nearbyOnly, nearbyRadius])
 
   const fetchProducts = async () => {
     setLoading(true)
@@ -37,6 +43,46 @@ export default function BrowsePage() {
       setProducts([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation not supported by your browser')
+      return
+    }
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setNearbyOnly(true)
+        setLocating(false)
+      },
+      () => {
+        alert('Could not detect location. Try entering your city manually.')
+        setLocating(false)
+      }
+    )
+  }
+
+  const handleSearchLocation = async () => {
+    if (!locationInput.trim()) return
+    setLocating(true)
+    try {
+      const results = await geocodeLocation(locationInput)
+      if (results && results.length > 0) {
+        setUserCoords({
+          lat: parseFloat(results[0].lat),
+          lng: parseFloat(results[0].lon)
+        })
+        setNearbyOnly(true)
+      } else {
+        alert('Location not found. Try a different city name.')
+      }
+    } catch {
+      alert('Failed to find location')
+    } finally {
+      setLocating(false)
     }
   }
 
@@ -57,8 +103,28 @@ export default function BrowsePage() {
       result = result.filter(p => p.pricePerUnit <= Number(maxPrice))
     }
 
+    // Nearby filter
+    if (nearbyOnly && userCoords) {
+      result = result.filter(p => {
+        const coords = p.farmerId?.coordinates
+        if (!coords?.lat || !coords?.lng) return true // include if no coords
+        const dist = getDistanceKm(userCoords.lat, userCoords.lng, coords.lat, coords.lng)
+        return dist <= nearbyRadius
+      })
+    }
+
     // Sort
-    if (sortBy === 'newest') {
+    if (sortBy === 'nearest' && userCoords) {
+      result.sort((a, b) => {
+        const aCoords = a.farmerId?.coordinates
+        const bCoords = b.farmerId?.coordinates
+        if (!aCoords?.lat) return 1
+        if (!bCoords?.lat) return -1
+        const aDist = getDistanceKm(userCoords.lat, userCoords.lng, aCoords.lat, aCoords.lng)
+        const bDist = getDistanceKm(userCoords.lat, userCoords.lng, bCoords.lat, bCoords.lng)
+        return aDist - bDist
+      })
+    } else if (sortBy === 'newest') {
       result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     } else if (sortBy === 'price-low') {
       result.sort((a, b) => a.pricePerUnit - b.pricePerUnit)
@@ -76,9 +142,12 @@ export default function BrowsePage() {
     setMaxPrice('')
     setSortBy('newest')
     setCategory('all')
+    setNearbyOnly(false)
+    setUserCoords(null)
+    setLocationInput('')
   }
 
-  const hasActiveFilters = search || maxPrice || sortBy !== 'newest' || category !== 'all'
+  const hasActiveFilters = search || maxPrice || sortBy !== 'newest' || category !== 'all' || nearbyOnly
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -99,7 +168,9 @@ export default function BrowsePage() {
               : 'border-gray-200 text-gray-500 hover:border-gray-300'
           }`}
         >
-          🔧 Filters {hasActiveFilters && <span className="bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">!</span>}
+          🔧 Filters {hasActiveFilters && (
+            <span className="bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">!</span>
+          )}
         </button>
       </div>
 
@@ -123,34 +194,98 @@ export default function BrowsePage() {
 
       {/* Expandable filters panel */}
       {showFilters && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-6 grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Sort By
-            </label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
-            >
-              <option value="newest">Newest First</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="quantity">Most Available</option>
-            </select>
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-6 space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Sort By
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+              >
+                <option value="newest">Newest First</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="quantity">Most Available</option>
+                {userCoords && <option value="nearest">Nearest First</option>}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Max Price (₹)
+              </label>
+              <input
+                type="number"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                placeholder="e.g. 100"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+              />
+            </div>
           </div>
 
-          <div>
+          {/* Location filter */}
+          <div className="border-t border-gray-100 pt-4">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Max Price (₹)
+              📍 Filter by Location
             </label>
-            <input
-              type="number"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              placeholder="e.g. 100"
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
-            />
+            <div className="flex gap-2 mb-3 flex-wrap">
+              <input
+                value={locationInput}
+                onChange={(e) => setLocationInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()}
+                placeholder="Enter your city (e.g. Hyderabad)"
+                className="flex-1 border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 text-sm"
+              />
+              <button
+                onClick={handleSearchLocation}
+                disabled={locating}
+                className="bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-green-800 transition"
+              >
+                {locating ? '⏳' : '🔍 Search'}
+              </button>
+              <button
+                onClick={handleDetectLocation}
+                disabled={locating}
+                className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition"
+              >
+                {locating ? '⏳' : '📡 Detect'}
+              </button>
+            </div>
+
+            {userCoords && (
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="text-xs text-green-600 font-semibold bg-green-50 px-3 py-1 rounded-full">
+                  ✅ Location set
+                </span>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-600 font-semibold">
+                    Radius: {nearbyRadius} km
+                  </label>
+                  <input
+                    type="range"
+                    min="10"
+                    max="500"
+                    step="10"
+                    value={nearbyRadius}
+                    onChange={(e) => setNearbyRadius(Number(e.target.value))}
+                    className="w-24"
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-xs text-gray-600 font-semibold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={nearbyOnly}
+                    onChange={(e) => setNearbyOnly(e.target.checked)}
+                    className="rounded"
+                  />
+                  Nearby only
+                </label>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -170,6 +305,18 @@ export default function BrowsePage() {
             {c}
           </button>
         ))}
+        {userCoords && (
+          <button
+            onClick={() => setNearbyOnly(!nearbyOnly)}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition border-2 ${
+              nearbyOnly
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'border-gray-200 text-gray-500 hover:border-blue-300 bg-white'
+            }`}
+          >
+            📍 Near Me
+          </button>
+        )}
       </div>
 
       {/* Products grid */}
@@ -201,7 +348,11 @@ export default function BrowsePage() {
       ) : (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((product) => (
-            <ProductCard key={product._id} product={product} />
+            <ProductCard
+              key={product._id}
+              product={product}
+              userCoords={userCoords}
+            />
           ))}
         </div>
       )}

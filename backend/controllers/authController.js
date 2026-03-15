@@ -109,10 +109,10 @@ const getMe = async (req, res) => {
 // @desc   Update profile
 // @route  PATCH /api/auth/profile
 const updateProfile = async (req, res) => {
-  const { name, location } = req.body
+  const { name, location, coordinates } = req.body
   const user = await User.findByIdAndUpdate(
     req.user._id,
-    { name, location },
+    { name, location, coordinates },
     { new: true }
   ).select('-__v')
   res.json(user)

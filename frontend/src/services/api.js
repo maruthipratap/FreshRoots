@@ -38,4 +38,7 @@ export const adminVerifyFarmer = (userId, status) => api.patch(`/auth/admin/veri
 export const setSeasonalDeal = (id, data) => api.patch(`/products/${id}/seasonal`, data)
 export const updateFarmStory = (data) => api.patch('/auth/farm-story', data)
 export const getFarmStory = (farmerId) => api.get(`/auth/farm-story/${farmerId}`)
+export const geocodeLocation = (city) => 
+  fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`)
+    .then(res => res.json())
 export default api

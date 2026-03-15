@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import { getDistanceKm } from '../utils/distance'
 
 const categoryEmoji = {
   'vegetables': '🥦',
@@ -41,7 +42,7 @@ function CountdownTimer({ endDate }) {
   )
 }
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, userCoords }) {
   const emoji = categoryEmoji[product.category] || '🌿'
 
   // Check if seasonal deal is still active
@@ -120,7 +121,16 @@ export default function ProductCard({ product }) {
                 ✅ Verified
               </span>
             )}
-            {/* Farm Story button */}
+            {/* Distance badge */}
+            {userCoords && product.farmerId?.coordinates?.lat && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 text-xs px-2 py-0.5 rounded-full font-semibold">
+                📍 {getDistanceKm(
+                  userCoords.lat, userCoords.lng,
+                  product.farmerId.coordinates.lat,
+                  product.farmerId.coordinates.lng
+                )} km away
+              </span>
+            )}
             <Link
               to={`/farm/${product.farmerId._id}`}
               onClick={(e) => e.stopPropagation()}
