@@ -48,7 +48,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-3">
           {user ? (
             <>
               <span className="text-green-200 text-sm">👋 {user.name}</span>
@@ -80,6 +80,9 @@ export default function Navbar() {
                   </Link>
                   <Link to="/harvests" className="text-green-200 hover:text-white text-sm transition">
                     Harvests
+                  </Link>
+                  <Link to="/group-buys" className="text-green-200 hover:text-white text-sm transition">
+                    Groups
                   </Link>
                   <Link to="/subscription-boxes" className="text-green-200 hover:text-white text-sm transition">
                     Boxes
@@ -184,6 +187,10 @@ export default function Navbar() {
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     📅 Upcoming Harvests
                   </Link>
+                  <Link to="/group-buys" onClick={closeMenu}
+                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
+                    👥 Group Buying
+                  </Link>
                   <Link to="/subscription-boxes" onClick={closeMenu}
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     📦 Subscription Boxes
@@ -199,6 +206,10 @@ export default function Navbar() {
                   <Link to="/buyer/negotiations" onClick={closeMenu}
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
                     🤝 My Deals
+                  </Link>
+                  <Link to="/my-group-buys" onClick={closeMenu}
+                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
+                    👥 My Group Buys
                   </Link>
                   <Link to="/notifications" onClick={closeMenu}
                     className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">

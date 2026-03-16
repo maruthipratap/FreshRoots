@@ -24,6 +24,9 @@ import CreateSubscriptionBoxPage from './pages/CreateSubscriptionBoxPage'
 import SubscriptionBoxesPage from './pages/SubscriptionBoxesPage'
 import MySubscriptionsPage from './pages/MySubscriptionsPage'
 import FarmerSubscriptionsPage from './pages/FarmerSubscriptionsPage'
+import GroupBuyPage from './pages/GroupBuyPage'
+import CreateGroupBuyPage from './pages/CreateGroupBuyPage'
+import MyGroupBuysPage from './pages/MyGroupBuysPage'
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -88,6 +91,9 @@ function AppContent() {
         <Route path="/farmer/subscription-boxes" element={<FarmerSubscriptionsPage />} />
         <Route path="/subscription-boxes" element={<SubscriptionBoxesPage />} />
         <Route path="/my-subscriptions" element={<MySubscriptionsPage />} />
+        <Route path="/group-buys" element={<GroupBuyPage />} />
+        <Route path="/product/:id/group-buy" element={<CreateGroupBuyPage />} />
+        <Route path="/my-group-buys" element={<MyGroupBuysPage />} />
       </Routes>
     </div>
   )

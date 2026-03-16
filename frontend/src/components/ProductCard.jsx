@@ -215,6 +215,14 @@ export default function ProductCard({ product, userCoords }) {
               🤝 Negotiate
             </Link>
           )}
+          {user?.role === 'buyer' && (
+            <Link
+              to={`/product/${product._id}/group-buy`}
+              className="text-xs text-center text-purple-600 hover:text-purple-800 font-semibold bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl transition"
+            >
+              👥 Group Buy
+            </Link>
+          )}
         </div>
       </div>
     </div>
