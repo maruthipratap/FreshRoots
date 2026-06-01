@@ -1,9 +1,15 @@
 const Product = require('../models/Product')
 const { sendRestockNotifications } = require('./notificationController')
+const { asyncHandler } = require('../middleware/errorMiddleware')
+
+// Helper function to escape RegExp special characters to prevent ReDoS
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
 
 // @desc   Add a new product
 // @route  POST /api/products
-const addProduct = async (req, res) => {
+const addProduct = asyncHandler(async (req, res) => {
   const { category, name, description, quantityAvailable, unit, pricePerUnit, images } = req.body
 
   if (!category || !name || !quantityAvailable || !unit || !pricePerUnit) {
@@ -22,28 +28,31 @@ const addProduct = async (req, res) => {
   })
 
   res.status(201).json(product)
-}
+})
 
 // @desc   Get all products
 // @route  GET /api/products
-const getProducts = async (req, res) => {
+const getProducts = asyncHandler(async (req, res) => {
   const { category, search } = req.query
 
   const query = { isActive: true }
 
   if (category) query.category = category
-  if (search) query.name = { $regex: search, $options: 'i' }
+  if (search) {
+    const escapedSearch = escapeRegExp(search)
+    query.name = { $regex: escapedSearch, $options: 'i' }
+  }
 
   const products = await Product.find(query)
     .populate('farmerId', 'name location phoneNumber isVerified coordinates')
     .sort({ createdAt: -1 })
 
   res.json(products)
-}
+})
 
 // @desc   Get single product
 // @route  GET /api/products/:id
-const getProductById = async (req, res) => {
+const getProductById = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id)
     .populate('farmerId', 'name location phoneNumber isVerified coordinates')
 
@@ -52,20 +61,20 @@ const getProductById = async (req, res) => {
   }
 
   res.json(product)
-}
+})
 
 // @desc   Get all products by a farmer
 // @route  GET /api/products/farmer/:farmerId
-const getProductsByFarmer = async (req, res) => {
+const getProductsByFarmer = asyncHandler(async (req, res) => {
   const products = await Product.find({ farmerId: req.params.farmerId })
     .sort({ createdAt: -1 })
 
   res.json(products)
-}
+})
 
 // @desc   Update a product
 // @route  PATCH /api/products/:id
-const updateProduct = async (req, res) => {
+const updateProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id)
 
   if (!product) {
@@ -77,11 +86,20 @@ const updateProduct = async (req, res) => {
   }
 
   const wasOutOfStock = product.quantityAvailable === 0
-  
+
+  // Whitelist request fields to prevent NoSQL injection via req.body
+  const whitelist = ['category', 'name', 'description', 'images', 'quantityAvailable', 'unit', 'pricePerUnit', 'isActive']
+  const updates = {}
+  Object.keys(req.body).forEach((key) => {
+    if (whitelist.includes(key)) {
+      updates[key] = req.body[key]
+    }
+  })
+
   const updated = await Product.findByIdAndUpdate(
     req.params.id,
-    req.body,
-    { new: true }
+    updates,
+    { new: true, runValidators: true }
   )
 
   // Send restock notifications if product was out of stock and now has stock
@@ -90,11 +108,11 @@ const updateProduct = async (req, res) => {
   }
 
   res.json(updated)
-}
+})
 
 // @desc   Delete a product
 // @route  DELETE /api/products/:id
-const deleteProduct = async (req, res) => {
+const deleteProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id)
 
   if (!product) {
@@ -108,11 +126,11 @@ const deleteProduct = async (req, res) => {
   await product.deleteOne()
 
   res.json({ message: 'Product deleted successfully' })
-}
+})
 
 // @desc   Set or remove seasonal deal on a product
 // @route  PATCH /api/products/:id/seasonal
-const setSeasonalDeal = async (req, res) => {
+const setSeasonalDeal = asyncHandler(async (req, res) => {
   const { isSeasonal, seasonalPrice, seasonEnd } = req.body
 
   const product = await Product.findById(req.params.id)
@@ -128,7 +146,7 @@ const setSeasonalDeal = async (req, res) => {
   await product.save()
 
   res.json({ message: isSeasonal ? 'Seasonal deal set!' : 'Seasonal deal removed', product })
-}
+})
 
 module.exports = {
   addProduct,

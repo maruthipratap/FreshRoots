@@ -15,6 +15,11 @@ const protect = async (req, res, next) => {
       // Get user from token
       req.user = await User.findById(decoded.id)
 
+      // Check if user still exists in database
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized, user no longer exists' })
+      }
+
       next()
     } catch (error) {
       res.status(401).json({ message: 'Not authorized, token failed' })
@@ -40,4 +45,12 @@ const buyerOnly = (req, res, next) => {
   }
 }
 
-module.exports = { protect, farmerOnly, buyerOnly }
+const adminOnly = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next()
+  } else {
+    res.status(403).json({ message: 'Access denied. Admins only.' })
+  }
+}
+
+module.exports = { protect, farmerOnly, buyerOnly, adminOnly }

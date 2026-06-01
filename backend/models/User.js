@@ -10,11 +10,18 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Phone number is required'],
     unique: true,
-    trim: true
+    trim: true,
+    validate: {
+      validator: function (v) {
+        // E.164 phone number regex validation
+        return /^\+?[1-9]\d{1,14}$/.test(v)
+      },
+      message: (props) => `${props.value} is not a valid phone number!`
+    }
   },
   role: {
     type: String,
-    enum: ['farmer', 'buyer'],
+    enum: ['farmer', 'buyer', 'admin'],
     required: [true, 'Role is required']
   },
   location: {

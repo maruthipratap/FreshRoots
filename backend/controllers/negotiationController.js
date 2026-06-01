@@ -1,10 +1,11 @@
 const Negotiation = require('../models/Negotiation')
 const Product = require('../models/Product')
 const Order = require('../models/Order')
+const { asyncHandler } = require('../middleware/errorMiddleware')
 
 // @desc   Buyer creates a negotiation request
 // @route  POST /api/negotiations
-const createNegotiation = async (req, res) => {
+const createNegotiation = asyncHandler(async (req, res) => {
   const { productId, requestedQuantity, requestedPrice, buyerNote } = req.body
 
   if (!productId || !requestedQuantity || !requestedPrice) {
@@ -37,16 +38,21 @@ const createNegotiation = async (req, res) => {
   await negotiation.populate('buyerId', 'name phoneNumber location')
 
   res.status(201).json(negotiation)
-}
+})
 
 // @desc   Farmer responds - accept, reject or counter
 // @route  PATCH /api/negotiations/:id/respond
-const respondToNegotiation = async (req, res) => {
+const respondToNegotiation = asyncHandler(async (req, res) => {
   const { action, counterPrice, counterQuantity, farmerNote } = req.body
   // action: 'accept' | 'reject' | 'counter'
 
+  const validActions = ['accept', 'reject', 'counter']
+  if (!validActions.includes(action)) {
+    return res.status(400).json({ message: `Action must be one of: ${validActions.join(', ')}` })
+  }
+
   const negotiation = await Negotiation.findById(req.params.id)
-    .populate('productId', 'name unit pricePerUnit')
+    .populate('productId')
     .populate('buyerId', 'name phoneNumber')
 
   if (!negotiation) return res.status(404).json({ message: 'Negotiation not found' })
@@ -55,30 +61,79 @@ const respondToNegotiation = async (req, res) => {
     return res.status(403).json({ message: 'Not authorized' })
   }
 
-  if (action === 'accept') {
-    negotiation.status = 'accepted'
-    negotiation.farmerNote = farmerNote || ''
-  } else if (action === 'reject') {
+  if (action === 'reject') {
     negotiation.status = 'rejected'
     negotiation.farmerNote = farmerNote || ''
-  } else if (action === 'counter') {
-    if (!counterPrice) return res.status(400).json({ message: 'Enter a counter price' })
+    negotiation.updatedAt = new Date()
+    await negotiation.save()
+    return res.json(negotiation)
+  }
+
+  if (action === 'counter') {
+    if (!counterPrice || typeof counterPrice !== 'number' || counterPrice <= 0) {
+      return res.status(400).json({ message: 'Enter a valid positive counter price' })
+    }
+    if (counterQuantity !== undefined && (typeof counterQuantity !== 'number' || counterQuantity <= 0)) {
+      return res.status(400).json({ message: 'Counter quantity must be a positive number' })
+    }
+
     negotiation.status = 'countered'
     negotiation.counterPrice = counterPrice
     negotiation.counterQuantity = counterQuantity || negotiation.requestedQuantity
     negotiation.farmerNote = farmerNote || ''
+    negotiation.updatedAt = new Date()
+    await negotiation.save()
+    return res.json(negotiation)
   }
 
-  negotiation.updatedAt = new Date()
-  await negotiation.save()
-  res.json(negotiation)
-}
+  if (action === 'accept') {
+    // Check stock availability
+    const product = negotiation.productId
+    if (!product) return res.status(404).json({ message: 'Product not found' })
+
+    const finalQuantity = negotiation.requestedQuantity
+    if (product.quantityAvailable < finalQuantity) {
+      return res.status(400).json({
+        message: `Insufficient stock available to accept this deal. Only ${product.quantityAvailable} ${product.unit} available.`
+      })
+    }
+
+    // Auto create order with negotiated price
+    const order = await Order.create({
+      productId: product._id,
+      buyerId: negotiation.buyerId._id,
+      farmerId: negotiation.farmerId,
+      quantityOrdered: finalQuantity,
+      totalPrice: negotiation.requestedPrice * finalQuantity,
+      deliveryType: 'pickup',
+      status: 'pending',
+      paymentStatus: 'pending',
+      notes: `Negotiated deal — ₹${negotiation.requestedPrice}/${product.unit}`
+    })
+
+    // Reduce product quantity
+    product.quantityAvailable -= finalQuantity
+    await product.save()
+
+    negotiation.status = 'ordered'
+    negotiation.farmerNote = farmerNote || ''
+    negotiation.updatedAt = new Date()
+    await negotiation.save()
+
+    return res.json({ negotiation, order })
+  }
+})
 
 // @desc   Buyer accepts or rejects counter offer
 // @route  PATCH /api/negotiations/:id/buyer-respond
-const buyerRespond = async (req, res) => {
+const buyerRespond = asyncHandler(async (req, res) => {
   const { action } = req.body
   // action: 'accept' | 'reject'
+
+  const validActions = ['accept', 'reject']
+  if (!validActions.includes(action)) {
+    return res.status(400).json({ message: `Action must be one of: ${validActions.join(', ')}` })
+  }
 
   const negotiation = await Negotiation.findById(req.params.id)
     .populate('productId')
@@ -101,12 +156,22 @@ const buyerRespond = async (req, res) => {
   }
 
   if (action === 'accept') {
-    // Auto create order with negotiated price
+    // Check stock availability
+    const product = negotiation.productId
+    if (!product) return res.status(404).json({ message: 'Product not found' })
+
     const finalPrice = negotiation.counterPrice
     const finalQuantity = negotiation.counterQuantity || negotiation.requestedQuantity
 
+    if (product.quantityAvailable < finalQuantity) {
+      return res.status(400).json({
+        message: `Insufficient stock available to accept counter offer. Only ${product.quantityAvailable} ${product.unit} available.`
+      })
+    }
+
+    // Auto create order with negotiated price
     const order = await Order.create({
-      productId: negotiation.productId._id,
+      productId: product._id,
       buyerId: negotiation.buyerId,
       farmerId: negotiation.farmerId,
       quantityOrdered: finalQuantity,
@@ -114,14 +179,12 @@ const buyerRespond = async (req, res) => {
       deliveryType: 'pickup',
       status: 'pending',
       paymentStatus: 'pending',
-      notes: `Negotiated deal — ₹${finalPrice}/${negotiation.productId.unit}`
+      notes: `Negotiated deal — ₹${finalPrice}/${product.unit}`
     })
 
     // Reduce product quantity
-    await Product.findByIdAndUpdate(
-      negotiation.productId._id,
-      { $inc: { quantityAvailable: -finalQuantity } }
-    )
+    product.quantityAvailable -= finalQuantity
+    await product.save()
 
     negotiation.status = 'ordered'
     negotiation.updatedAt = new Date()
@@ -129,27 +192,27 @@ const buyerRespond = async (req, res) => {
 
     return res.json({ negotiation, order })
   }
-}
+})
 
 // @desc   Get buyer's negotiations
 // @route  GET /api/negotiations/buyer
-const getBuyerNegotiations = async (req, res) => {
+const getBuyerNegotiations = asyncHandler(async (req, res) => {
   const negotiations = await Negotiation.find({ buyerId: req.user._id })
     .populate('productId', 'name images unit pricePerUnit category')
     .populate('farmerId', 'name location phoneNumber')
     .sort({ updatedAt: -1 })
   res.json(negotiations)
-}
+})
 
 // @desc   Get farmer's negotiations
 // @route  GET /api/negotiations/farmer
-const getFarmerNegotiations = async (req, res) => {
+const getFarmerNegotiations = asyncHandler(async (req, res) => {
   const negotiations = await Negotiation.find({ farmerId: req.user._id })
     .populate('productId', 'name images unit pricePerUnit category')
     .populate('buyerId', 'name location phoneNumber')
     .sort({ updatedAt: -1 })
   res.json(negotiations)
-}
+})
 
 module.exports = {
   createNegotiation,

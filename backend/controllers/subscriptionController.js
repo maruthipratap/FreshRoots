@@ -1,5 +1,6 @@
 const SubscriptionBox = require('../models/SubscriptionBox')
 const Subscription = require('../models/Subscription')
+const { asyncHandler } = require('../middleware/errorMiddleware')
 
 // Helper to calculate next delivery date
 const getNextDelivery = (frequency) => {
@@ -12,46 +13,58 @@ const getNextDelivery = (frequency) => {
 
 // @desc   Farmer creates a subscription box
 // @route  POST /api/subscriptions/boxes
-const createBox = async (req, res) => {
+const createBox = asyncHandler(async (req, res) => {
   const { boxName, description, items, price, frequency, image } = req.body
 
-  if (!boxName || !items || items.length === 0 || !price || !frequency) {
-    return res.status(400).json({ message: 'Please fill all required fields' })
+  // Validate items are correct and only contain whitelisted fields
+  const sanitizedItems = Array.isArray(items)
+    ? items.map(item => ({
+        name: typeof item.name === 'string' ? item.name.trim() : '',
+        quantity: typeof item.quantity === 'number' ? item.quantity : 0,
+        unit: typeof item.unit === 'string' ? item.unit.trim() : ''
+      })).filter(item => item.name && item.quantity > 0 && item.unit)
+    : []
+
+  if (!boxName || typeof boxName !== 'string' || boxName.trim() === '' ||
+      sanitizedItems.length === 0 ||
+      typeof price !== 'number' || price <= 0 ||
+      !frequency) {
+    return res.status(400).json({ message: 'Please fill all required fields with valid values' })
   }
 
   const box = await SubscriptionBox.create({
     farmerId: req.user._id,
-    boxName,
-    description,
-    items,
+    boxName: boxName.trim(),
+    description: typeof description === 'string' ? description.trim() : '',
+    items: sanitizedItems,
     price,
     frequency,
-    image: image || ''
+    image: typeof image === 'string' ? image.trim() : ''
   })
 
   res.status(201).json(box)
-}
+})
 
 // @desc   Get all active subscription boxes (buyers browse)
 // @route  GET /api/subscriptions/boxes
-const getBoxes = async (req, res) => {
+const getBoxes = asyncHandler(async (req, res) => {
   const boxes = await SubscriptionBox.find({ isActive: true })
     .populate('farmerId', 'name location isVerified')
     .sort({ createdAt: -1 })
   res.json(boxes)
-}
+})
 
 // @desc   Get farmer's own boxes
 // @route  GET /api/subscriptions/boxes/farmer
-const getFarmerBoxes = async (req, res) => {
+const getFarmerBoxes = asyncHandler(async (req, res) => {
   const boxes = await SubscriptionBox.find({ farmerId: req.user._id })
     .sort({ createdAt: -1 })
   res.json(boxes)
-}
+})
 
 // @desc   Buyer subscribes to a box
 // @route  POST /api/subscriptions/subscribe/:boxId
-const subscribeToBox = async (req, res) => {
+const subscribeToBox = asyncHandler(async (req, res) => {
   const { deliveryType, deliveryAddress } = req.body
 
   const box = await SubscriptionBox.findById(req.params.boxId)
@@ -90,20 +103,20 @@ const subscribeToBox = async (req, res) => {
   })
 
   res.status(201).json({ message: 'Subscribed successfully! 🎉', subscription })
-}
+})
 
 // @desc   Get buyer's subscriptions
 // @route  GET /api/subscriptions/my
-const getMySubscriptions = async (req, res) => {
+const getMySubscriptions = asyncHandler(async (req, res) => {
   const subscriptions = await Subscription.find({ buyerId: req.user._id })
     .populate('farmerId', 'name location phoneNumber isVerified')
     .sort({ startedAt: -1 })
   res.json(subscriptions)
-}
+})
 
 // @desc   Get farmer's subscribers
 // @route  GET /api/subscriptions/farmer
-const getFarmerSubscriptions = async (req, res) => {
+const getFarmerSubscriptions = asyncHandler(async (req, res) => {
   const subscriptions = await Subscription.find({
     farmerId: req.user._id,
     isActive: true
@@ -111,11 +124,11 @@ const getFarmerSubscriptions = async (req, res) => {
     .populate('buyerId', 'name location phoneNumber')
     .sort({ startedAt: -1 })
   res.json(subscriptions)
-}
+})
 
 // @desc   Cancel subscription
 // @route  PATCH /api/subscriptions/:id/cancel
-const cancelSubscription = async (req, res) => {
+const cancelSubscription = asyncHandler(async (req, res) => {
   const subscription = await Subscription.findById(req.params.id)
   if (!subscription) return res.status(404).json({ message: 'Subscription not found' })
 
@@ -123,22 +136,30 @@ const cancelSubscription = async (req, res) => {
     return res.status(403).json({ message: 'Not authorized' })
   }
 
+  if (!subscription.isActive) {
+    return res.status(400).json({ message: 'Subscription is already cancelled' })
+  }
+
   subscription.isActive = false
   subscription.cancelledAt = new Date()
   await subscription.save()
 
-  // Decrement subscriber count
-  await SubscriptionBox.findOneAndUpdate(
-    { farmerId: subscription.farmerId, boxName: subscription.boxName },
-    { $inc: { subscriberCount: -1 } }
-  )
+  // Decrement subscriber count only if box exists and it's greater than 0
+  const box = await SubscriptionBox.findOne({
+    farmerId: subscription.farmerId,
+    boxName: subscription.boxName
+  })
+  if (box && box.subscriberCount > 0) {
+    box.subscriberCount -= 1
+    await box.save()
+  }
 
   res.json({ message: 'Subscription cancelled' })
-}
+})
 
 // @desc   Delete a box (farmer)
 // @route  DELETE /api/subscriptions/boxes/:id
-const deleteBox = async (req, res) => {
+const deleteBox = asyncHandler(async (req, res) => {
   const box = await SubscriptionBox.findById(req.params.id)
   if (!box) return res.status(404).json({ message: 'Box not found' })
 
@@ -148,7 +169,7 @@ const deleteBox = async (req, res) => {
 
   await box.deleteOne()
   res.json({ message: 'Box deleted' })
-}
+})
 
 module.exports = {
   createBox,

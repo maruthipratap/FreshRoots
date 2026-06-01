@@ -78,22 +78,86 @@ function AppContent() {
             <FarmerProfilePage />
           </ProtectedRoute>
         } />
-        <Route path="/farmer/farm-story" element={<FarmStoryPage />} />
-        <Route path="/farm/:farmerId" element={<FarmStoryViewPage />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/farmer/harvests" element={<HarvestCalendarPage />} />
-        <Route path="/farmer/add-harvest" element={<AddHarvestPage />} />
-        <Route path="/harvests" element={<HarvestBrowsePage />} />
-        <Route path="/product/:id/negotiate" element={<NegotiationPage />} />
-        <Route path="/farmer/negotiations" element={<FarmerNegotiationsPage />} />
-        <Route path="/buyer/negotiations" element={<BuyerNegotiationsPage />} />
-        <Route path="/farmer/create-box" element={<CreateSubscriptionBoxPage />} />
-        <Route path="/farmer/subscription-boxes" element={<FarmerSubscriptionsPage />} />
-        <Route path="/subscription-boxes" element={<SubscriptionBoxesPage />} />
-        <Route path="/my-subscriptions" element={<MySubscriptionsPage />} />
-        <Route path="/group-buys" element={<GroupBuyPage />} />
-        <Route path="/product/:id/group-buy" element={<CreateGroupBuyPage />} />
-        <Route path="/my-group-buys" element={<MyGroupBuysPage />} />
+        <Route path="/farmer/farm-story" element={
+          <ProtectedRoute>
+            <FarmStoryPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/farm/:farmerId" element={
+          <ProtectedRoute>
+            <FarmStoryViewPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/notifications" element={
+          <ProtectedRoute>
+            <NotificationsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/farmer/harvests" element={
+          <ProtectedRoute>
+            <HarvestCalendarPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/farmer/add-harvest" element={
+          <ProtectedRoute>
+            <AddHarvestPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/harvests" element={
+          <ProtectedRoute>
+            <HarvestBrowsePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/product/:id/negotiate" element={
+          <ProtectedRoute>
+            <NegotiationPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/farmer/negotiations" element={
+          <ProtectedRoute>
+            <FarmerNegotiationsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/buyer/negotiations" element={
+          <ProtectedRoute>
+            <BuyerNegotiationsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/farmer/create-box" element={
+          <ProtectedRoute>
+            <CreateSubscriptionBoxPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/farmer/subscription-boxes" element={
+          <ProtectedRoute>
+            <FarmerSubscriptionsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/subscription-boxes" element={
+          <ProtectedRoute>
+            <SubscriptionBoxesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/my-subscriptions" element={
+          <ProtectedRoute>
+            <MySubscriptionsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/group-buys" element={
+          <ProtectedRoute>
+            <GroupBuyPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/product/:id/group-buy" element={
+          <ProtectedRoute>
+            <CreateGroupBuyPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/my-group-buys" element={
+          <ProtectedRoute>
+            <MyGroupBuysPage />
+          </ProtectedRoute>
+        } />
       </Routes>
     </div>
   )

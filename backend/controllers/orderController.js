@@ -1,9 +1,10 @@
 const Order = require('../models/Order')
 const Product = require('../models/Product')
+const { asyncHandler } = require('../middleware/errorMiddleware')
 
 // @desc   Place an order
 // @route  POST /api/orders
-const placeOrder = async (req, res) => {
+const placeOrder = asyncHandler(async (req, res) => {
   const { productId, quantityOrdered, deliveryType, deliveryAddress, notes } = req.body
 
   if (!productId || !quantityOrdered || !deliveryType) {
@@ -49,33 +50,43 @@ const placeOrder = async (req, res) => {
     .populate('farmerId', 'name phoneNumber location')
 
   res.status(201).json(populatedOrder)
-}
+})
 
 // @desc   Get all orders for a farmer
 // @route  GET /api/orders/farmer/:farmerId
-const getFarmerOrders = async (req, res) => {
+const getFarmerOrders = asyncHandler(async (req, res) => {
+  // Enforce ownership to prevent IDOR
+  if (req.user._id.toString() !== req.params.farmerId) {
+    return res.status(403).json({ message: 'Not authorized to view other farmer orders' })
+  }
+
   const orders = await Order.find({ farmerId: req.params.farmerId })
     .populate('productId', 'name category unit')
     .populate('buyerId', 'name phoneNumber location')
     .sort({ createdAt: -1 })
 
   res.json(orders)
-}
+})
 
 // @desc   Get all orders for a buyer
 // @route  GET /api/orders/buyer/:buyerId
-const getBuyerOrders = async (req, res) => {
+const getBuyerOrders = asyncHandler(async (req, res) => {
+  // Enforce ownership to prevent IDOR
+  if (req.user._id.toString() !== req.params.buyerId) {
+    return res.status(403).json({ message: 'Not authorized to view other buyer orders' })
+  }
+
   const orders = await Order.find({ buyerId: req.params.buyerId })
     .populate('productId', 'name category unit pricePerUnit')
     .populate('farmerId', 'name phoneNumber location')
     .sort({ createdAt: -1 })
 
   res.json(orders)
-}
+})
 
 // @desc   Update order status (farmer accepts/completes/cancels)
 // @route  PATCH /api/orders/:id/status
-const updateOrderStatus = async (req, res) => {
+const updateOrderStatus = asyncHandler(async (req, res) => {
   const { status } = req.body
 
   const validStatuses = ['accepted', 'completed', 'cancelled']
@@ -93,8 +104,18 @@ const updateOrderStatus = async (req, res) => {
     return res.status(403).json({ message: 'Not authorized to update this order' })
   }
 
+  const oldStatus = order.status
   order.status = status
   await order.save()
+
+  // Restore product quantity if order is cancelled and wasn't cancelled before
+  if (status === 'cancelled' && oldStatus !== 'cancelled') {
+    const product = await Product.findById(order.productId)
+    if (product) {
+      product.quantityAvailable += order.quantityOrdered
+      await product.save()
+    }
+  }
 
   const updated = await Order.findById(order._id)
     .populate('productId', 'name category unit')
@@ -102,11 +123,11 @@ const updateOrderStatus = async (req, res) => {
     .populate('farmerId', 'name phoneNumber')
 
   res.json(updated)
-}
+})
 
 // @desc   Update payment status (mock payment)
 // @route  PATCH /api/orders/:id/payment
-const updatePaymentStatus = async (req, res) => {
+const updatePaymentStatus = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id)
 
   if (!order) {
@@ -122,7 +143,7 @@ const updatePaymentStatus = async (req, res) => {
   await order.save()
 
   res.json({ message: '✅ Payment successful!', order })
-}
+})
 
 module.exports = {
   placeOrder,

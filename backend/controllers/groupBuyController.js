@@ -1,14 +1,28 @@
 const GroupBuy = require('../models/GroupBuy')
 const Product = require('../models/Product')
 const Order = require('../models/Order')
+const { asyncHandler } = require('../middleware/errorMiddleware')
 
 // @desc   Create a group buy
 // @route  POST /api/groupbuy
-const createGroupBuy = async (req, res) => {
+const createGroupBuy = asyncHandler(async (req, res) => {
   const { productId, title, targetQuantity, quantityPerPerson, unlockedPrice, expiresInDays } = req.body
 
   if (!productId || !title || !targetQuantity || !quantityPerPerson || !unlockedPrice) {
     return res.status(400).json({ message: 'Please fill all required fields' })
+  }
+
+  // Validate inputs
+  if (
+    typeof targetQuantity !== 'number' || targetQuantity <= 0 ||
+    typeof quantityPerPerson !== 'number' || quantityPerPerson <= 0 ||
+    typeof unlockedPrice !== 'number' || unlockedPrice <= 0
+  ) {
+    return res.status(400).json({ message: 'Target quantity, quantity per person, and unlocked price must be positive numbers' })
+  }
+
+  if (quantityPerPerson > targetQuantity) {
+    return res.status(400).json({ message: 'Quantity per person cannot exceed target quantity' })
   }
 
   const product = await Product.findById(productId)
@@ -25,7 +39,7 @@ const createGroupBuy = async (req, res) => {
     productId,
     creatorId: req.user._id,
     farmerId: product.farmerId,
-    title,
+    title: typeof title === 'string' ? title.trim() : '',
     targetQuantity,
     quantityPerPerson,
     unlockedPrice,
@@ -36,11 +50,11 @@ const createGroupBuy = async (req, res) => {
   await groupBuy.populate('creatorId', 'name location')
 
   res.status(201).json(groupBuy)
-}
+})
 
 // @desc   Get all open group buys
 // @route  GET /api/groupbuy
-const getGroupBuys = async (req, res) => {
+const getGroupBuys = asyncHandler(async (req, res) => {
   const groupBuys = await GroupBuy.find({
     status: 'open',
     expiresAt: { $gt: new Date() }
@@ -52,11 +66,11 @@ const getGroupBuys = async (req, res) => {
     .sort({ createdAt: -1 })
 
   res.json(groupBuys)
-}
+})
 
 // @desc   Join a group buy
 // @route  POST /api/groupbuy/:id/join
-const joinGroupBuy = async (req, res) => {
+const joinGroupBuy = asyncHandler(async (req, res) => {
   const { quantity } = req.body
 
   const groupBuy = await GroupBuy.findById(req.params.id)
@@ -87,6 +101,22 @@ const joinGroupBuy = async (req, res) => {
 
   const finalQuantity = quantity || groupBuy.quantityPerPerson
 
+  // Check if adding this quantity exceeds product stock (to fail early)
+  const product = groupBuy.productId
+  if (!product) return res.status(404).json({ message: 'Product not found' })
+
+  // Temp check: if this join will cross the threshold, we will run the final check
+  const projectedQuantity = groupBuy.currentQuantity + finalQuantity
+
+  // If this join triggers completion, validate stock availability first
+  if (projectedQuantity >= groupBuy.targetQuantity) {
+    if (product.quantityAvailable < projectedQuantity) {
+      return res.status(400).json({
+        message: `Unable to join. Completing this group buy would require ${projectedQuantity} ${product.unit}, but only ${product.quantityAvailable} is available in stock.`
+      })
+    }
+  }
+
   groupBuy.participants.push({
     userId: req.user._id,
     quantity: finalQuantity
@@ -99,7 +129,7 @@ const joinGroupBuy = async (req, res) => {
 
     // Auto place orders for all participants
     const orders = groupBuy.participants.map(p => ({
-      productId: groupBuy.productId._id,
+      productId: product._id,
       buyerId: p.userId,
       farmerId: groupBuy.farmerId,
       quantityOrdered: p.quantity,
@@ -107,16 +137,14 @@ const joinGroupBuy = async (req, res) => {
       deliveryType: 'pickup',
       status: 'pending',
       paymentStatus: 'pending',
-      notes: `Group Buy Deal — ₹${groupBuy.unlockedPrice}/${groupBuy.productId.unit} (${groupBuy.title})`
+      notes: `Group Buy Deal — ₹${groupBuy.unlockedPrice}/${product.unit} (${groupBuy.title})`
     }))
 
     await Order.insertMany(orders)
 
     // Reduce product quantity
-    await Product.findByIdAndUpdate(
-      groupBuy.productId._id,
-      { $inc: { quantityAvailable: -groupBuy.currentQuantity } }
-    )
+    product.quantityAvailable -= groupBuy.currentQuantity
+    await product.save()
 
     groupBuy.status = 'completed'
   }
@@ -128,11 +156,11 @@ const joinGroupBuy = async (req, res) => {
     : `Joined! ${groupBuy.targetQuantity - groupBuy.currentQuantity} more needed to unlock deal.`
 
   res.json({ message, groupBuy })
-}
+})
 
 // @desc   Get user's group buys (created + joined)
 // @route  GET /api/groupbuy/my
-const getMyGroupBuys = async (req, res) => {
+const getMyGroupBuys = asyncHandler(async (req, res) => {
   const groupBuys = await GroupBuy.find({
     $or: [
       { creatorId: req.user._id },
@@ -145,11 +173,11 @@ const getMyGroupBuys = async (req, res) => {
     .sort({ createdAt: -1 })
 
   res.json(groupBuys)
-}
+})
 
 // @desc   Cancel a group buy (creator only)
 // @route  PATCH /api/groupbuy/:id/cancel
-const cancelGroupBuy = async (req, res) => {
+const cancelGroupBuy = asyncHandler(async (req, res) => {
   const groupBuy = await GroupBuy.findById(req.params.id)
   if (!groupBuy) return res.status(404).json({ message: 'Group buy not found' })
 
@@ -160,20 +188,22 @@ const cancelGroupBuy = async (req, res) => {
   groupBuy.status = 'cancelled'
   await groupBuy.save()
   res.json({ message: 'Group buy cancelled' })
-}
+})
+
 // @desc   Get group buys for farmer's products
 // @route  GET /api/groupbuy/farmer
-const getFarmerGroupBuys = async (req, res) => {
+const getFarmerGroupBuys = asyncHandler(async (req, res) => {
   const groupBuys = await GroupBuy.find({ farmerId: req.user._id })
     .populate('productId', 'name images unit pricePerUnit category')
     .populate('creatorId', 'name location phoneNumber')
     .populate('participants.userId', 'name phoneNumber')
     .sort({ createdAt: -1 })
   res.json(groupBuys)
-}
+})
+
 // @desc   Farmer counters a group buy price
 // @route  PATCH /api/groupbuy/:id/counter
-const counterGroupBuy = async (req, res) => {
+const counterGroupBuy = asyncHandler(async (req, res) => {
   const { counterPrice } = req.body
   const groupBuy = await GroupBuy.findById(req.params.id)
     .populate('productId', 'name unit pricePerUnit')
@@ -186,13 +216,23 @@ const counterGroupBuy = async (req, res) => {
     return res.status(400).json({ message: 'Can only counter open group buys' })
   }
 
+  // Validate counter price input
+  if (typeof counterPrice !== 'number' || counterPrice <= 0) {
+    return res.status(400).json({ message: 'Counter price must be a positive number' })
+  }
+
   groupBuy.unlockedPrice = counterPrice
   await groupBuy.save()
 
   res.json({ message: 'Counter price updated! Buyers will see the new price.', groupBuy })
-}
+})
+
 module.exports = {
-  createGroupBuy, getGroupBuys, joinGroupBuy,
-  getMyGroupBuys, cancelGroupBuy, getFarmerGroupBuys,
+  createGroupBuy,
+  getGroupBuys,
+  joinGroupBuy,
+  getMyGroupBuys,
+  cancelGroupBuy,
+  getFarmerGroupBuys,
   counterGroupBuy
 }

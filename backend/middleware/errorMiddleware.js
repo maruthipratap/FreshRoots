@@ -1,0 +1,16 @@
+// asyncHandler wrapper to eliminate repetitive try-catch blocks
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next)
+}
+
+// Global errorHandler middleware to catch all unhandled errors
+const errorHandler = (err, req, res, next) => {
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode
+  res.status(statusCode)
+  res.json({
+    message: err.message,
+    stack: process.env.NODE_ENV === 'production' ? null : err.stack
+  })
+}
+
+module.exports = { asyncHandler, errorHandler }

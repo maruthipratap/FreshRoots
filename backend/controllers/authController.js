@@ -1,5 +1,6 @@
 const User = require('../models/User')
 const jwt = require('jsonwebtoken')
+const { asyncHandler } = require('../middleware/errorMiddleware')
 
 // In-memory OTP store { phoneNumber: { otp, expiresAt } }
 const otpStore = {}
@@ -11,7 +12,7 @@ const generateToken = (userId) => {
 
 // @desc   Send OTP to phone number
 // @route  POST /api/auth/send-otp
-const sendOTP = async (req, res) => {
+const sendOTP = asyncHandler(async (req, res) => {
   const { phoneNumber } = req.body
   if (!phoneNumber) {
     return res.status(400).json({ message: 'Phone number is required' })
@@ -24,11 +25,11 @@ const sendOTP = async (req, res) => {
   }
   console.log(`OTP for ${phoneNumber}: ${otp}`)
   res.json({ message: 'OTP sent successfully' })
-}
+})
 
 // @desc   Register new user
 // @route  POST /api/auth/register
-const register = async (req, res) => {
+const register = asyncHandler(async (req, res) => {
   const { name, phoneNumber, role, location, otp } = req.body
 
   // Verify OTP
@@ -62,11 +63,11 @@ const register = async (req, res) => {
       verificationStatus: user.verificationStatus
     }
   })
-}
+})
 
 // @desc   Login existing user
 // @route  POST /api/auth/login
-const login = async (req, res) => {
+const login = asyncHandler(async (req, res) => {
   const { phoneNumber, otp } = req.body
 
   // Verify OTP
@@ -97,73 +98,119 @@ const login = async (req, res) => {
       verificationStatus: user.verificationStatus
     }
   })
-}
+})
 
 // @desc   Get current logged in user
 // @route  GET /api/auth/me
-const getMe = async (req, res) => {
+const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select('-__v')
   res.json(user)
-}
+})
 
 // @desc   Update profile
 // @route  PATCH /api/auth/profile
-const updateProfile = async (req, res) => {
+const updateProfile = asyncHandler(async (req, res) => {
   const { name, location, coordinates } = req.body
+
+  // Validate request parameters
+  if (name !== undefined && (typeof name !== 'string' || name.trim() === '')) {
+    return res.status(400).json({ message: 'Name must be a non-empty string' })
+  }
+
+  if (coordinates !== undefined) {
+    if (
+      typeof coordinates !== 'object' ||
+      coordinates === null ||
+      typeof coordinates.lat !== 'number' ||
+      typeof coordinates.lng !== 'number' ||
+      isNaN(coordinates.lat) ||
+      isNaN(coordinates.lng)
+    ) {
+      return res.status(400).json({ message: 'Coordinates must contain valid lat and lng numbers' })
+    }
+  }
+
   const user = await User.findByIdAndUpdate(
     req.user._id,
     { name, location, coordinates },
-    { new: true }
+    { new: true, runValidators: true }
   ).select('-__v')
+
   res.json(user)
-}
+})
 
 // @desc   Farmer requests verification
 // @route  PATCH /api/auth/request-verification
-const requestVerification = async (req, res) => {
+const requestVerification = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id)
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' })
+  }
   if (user.verificationStatus === 'verified') {
     return res.status(400).json({ message: 'Already verified' })
   }
   user.verificationStatus = 'pending'
   await user.save()
   res.json({ message: 'Verification requested', verificationStatus: 'pending' })
-}
+})
 
 // @desc   Admin verifies or rejects a farmer
 // @route  PATCH /api/auth/admin/verify/:userId
-const verifyFarmer = async (req, res) => {
+const verifyFarmer = asyncHandler(async (req, res) => {
   const { status } = req.body // 'verified' or 'rejected'
+  if (!['verified', 'rejected'].includes(status)) {
+    return res.status(400).json({ message: "Status must be 'verified' or 'rejected'" })
+  }
+
   const user = await User.findById(req.params.userId)
   if (!user) return res.status(404).json({ message: 'User not found' })
+
   user.verificationStatus = status
   user.isVerified = status === 'verified'
   await user.save()
   res.json({ message: `Farmer ${status}`, user })
-}
+})
 
 // @desc   Update farm story
 // @route  PATCH /api/auth/farm-story
-const updateFarmStory = async (req, res) => {
-  const { farmName, bio, images, videoUrl, establishedYear } = req.body
-  const user = await User.findByIdAndUpdate(
-    req.user._id,
-    { farmStory: { farmName, bio, images, videoUrl, establishedYear } },
-    { new: true }
-  )
+const updateFarmStory = asyncHandler(async (req, res) => {
+  const { farmName, bio, images, videoUrl, establishedYear, location } = req.body
+  const user = await User.findById(req.user._id)
+
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' })
+  }
+
+  // Prevent partial farmStory updates from erasing omitted fields
+  if (farmName !== undefined) user.farmStory.farmName = farmName
+  if (bio !== undefined) user.farmStory.bio = bio
+  if (images !== undefined) user.farmStory.images = images
+  if (videoUrl !== undefined) user.farmStory.videoUrl = videoUrl
+  if (establishedYear !== undefined) user.farmStory.establishedYear = establishedYear
+  if (location !== undefined) user.farmStory.location = location
+
+  await user.save()
   res.json({ message: 'Farm story updated!', farmStory: user.farmStory })
-}
+})
 
 // @desc   Get farm story by farmer ID
 // @route  GET /api/auth/farm-story/:farmerId
-const getFarmStory = async (req, res) => {
+const getFarmStory = asyncHandler(async (req, res) => {
+  // Remove phoneNumber from public projection to protect farmer privacy
   const user = await User.findById(req.params.farmerId)
-    .select('name location phoneNumber isVerified verificationStatus farmStory createdAt')
+    .select('name location isVerified verificationStatus farmStory createdAt')
   if (!user) return res.status(404).json({ message: 'Farmer not found' })
   res.json(user)
-}
+})
+
 module.exports = {
-  sendOTP, register, login, getMe, updateProfile,
-  requestVerification, verifyFarmer,
-  updateFarmStory, getFarmStory
+  sendOTP,
+  register,
+  login,
+  getMe,
+  updateProfile,
+  requestVerification,
+  verifyFarmer,
+  updateFarmStory,
+  getFarmStory
 }
