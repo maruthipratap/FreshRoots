@@ -5,17 +5,16 @@ import { useAuth } from '../context/AuthContext'
 import { subscribeToProduct, unsubscribeFromProduct } from '../services/api'
 import toast from 'react-hot-toast'
 
-const categoryEmoji = {
-  'vegetables': '🥦',
-  'fruits': '🍎',
-  'milk & dairy': '🥛',
-  'meat': '🥩',
-  'eggs': '🥚',
-  'crops': '🌾',
-  'farm-made products': '🫙'
+const categoryLabel = {
+  vegetables: 'Veg',
+  fruits: 'Fruit',
+  'milk & dairy': 'Dairy',
+  meat: 'Meat',
+  eggs: 'Eggs',
+  crops: 'Crop',
+  'farm-made products': 'Farm Made',
 }
 
-// Countdown timer component
 function CountdownTimer({ endDate }) {
   const calculateTimeLeft = () => {
     const diff = new Date(endDate) - new Date()
@@ -23,7 +22,7 @@ function CountdownTimer({ endDate }) {
     return {
       days: Math.floor(diff / (1000 * 60 * 60 * 24)),
       hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-      minutes: Math.floor((diff / 1000 / 60) % 60)
+      minutes: Math.floor((diff / 1000 / 60) % 60),
     }
   }
 
@@ -32,15 +31,15 @@ function CountdownTimer({ endDate }) {
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft())
-    }, 60000) // update every minute
+    }, 60000)
     return () => clearInterval(timer)
   }, [endDate])
 
-  if (!timeLeft) return <span className="text-red-500 text-xs font-bold">Expired</span>
+  if (!timeLeft) return <span className="text-xs font-bold text-accent-700">Expired</span>
 
   return (
-    <span className="text-xs font-bold text-orange-600">
-      ⏰ {timeLeft.days > 0 ? `${timeLeft.days}d ` : ''}{timeLeft.hours}h {timeLeft.minutes}m left
+    <span className="text-xs font-bold text-accent-700">
+      {timeLeft.days > 0 ? `${timeLeft.days}d ` : ''}{timeLeft.hours}h {timeLeft.minutes}m left
     </span>
   )
 }
@@ -48,9 +47,9 @@ function CountdownTimer({ endDate }) {
 export default function ProductCard({ product, userCoords }) {
   const { user } = useAuth()
   const [subscribed, setSubscribed] = useState(false)
-  const emoji = categoryEmoji[product.category] || '🌿'
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const label = categoryLabel[product.category] || 'Fresh'
 
-  // Check if seasonal deal is still active
   const isSeasonalActive = product.isSeasonal &&
     product.seasonalPrice &&
     product.seasonEnd &&
@@ -72,159 +71,137 @@ export default function ProductCard({ product, userCoords }) {
       } else {
         await subscribeToProduct(product._id)
         setSubscribed(true)
-        toast.success('You will be notified when restocked! 🔔')
+        toast.success('You will be notified when this is restocked')
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to subscribe')
     }
   }
 
+  const distance = userCoords && product.farmerId?.coordinates?.lat
+    ? getDistanceKm(
+      userCoords.lat,
+      userCoords.lng,
+      product.farmerId.coordinates.lat,
+      product.farmerId.coordinates.lng
+    )
+    : null
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col hover:shadow-md transition hover:-translate-y-1 relative">
-
-      {/* Seasonal Deal Banner */}
-      {isSeasonalActive && (
-        <div className="absolute top-3 left-3 z-10 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-          🔥 {discount}% OFF
-        </div>
-      )}
-
-      {/* Image or emoji */}
-      <div className="w-full h-36 bg-green-50 rounded-xl flex items-center justify-center text-6xl mb-4 overflow-hidden">
-        {product.images && product.images.length > 0 && product.images[0] ? (
+    <article className="card group flex h-full flex-col overflow-hidden hover-lift">
+      <div className="relative h-52 overflow-hidden bg-primary-50">
+        {product.images?.[0] ? (
           <img
             src={product.images[0]}
             alt={product.name}
-            className="w-full h-full object-cover"
+            onLoad={() => setImageLoaded(true)}
+            className={`h-full w-full object-cover transition-all duration-300 group-hover:scale-105 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
           />
         ) : (
-          emoji
+          <div className="flex h-full w-full items-center justify-center bg-primary-50 px-6 text-center font-display text-4xl font-semibold text-primary-700">
+            {label}
+          </div>
+        )}
+
+        {isSeasonalActive && (
+          <div className="badge badge-accent absolute left-3 top-3 shadow-sm">
+            {discount}% off
+          </div>
         )}
       </div>
 
-      <div className="flex-1">
-        {/* Name + category */}
-        <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-gray-800 text-lg leading-tight">
-            {product.name}
-          </h3>
-          <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-semibold ml-2 shrink-0 capitalize">
-            {product.category}
-          </span>
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold leading-tight text-neutral-800">{product.name}</h3>
+            {product.description && (
+              <p className="mt-2 text-sm text-neutral-500 text-truncate-2">{product.description}</p>
+            )}
+          </div>
+          <span className="badge badge-primary shrink-0 capitalize">{product.category}</span>
         </div>
 
-        {/* Seasonal countdown */}
         {isSeasonalActive && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 mb-3">
+          <div className="mb-3 rounded-xl border border-accent-200 bg-accent-50 px-3 py-2">
             <CountdownTimer endDate={product.seasonEnd} />
           </div>
         )}
 
-        {/* Description */}
-        {product.description && (
-          <p className="text-gray-500 text-sm mb-3 line-clamp-2">
-            {product.description}
-          </p>
-        )}
-
-        {/* Quantity */}
-        <div className="text-sm text-gray-500 mb-2">
-          📦 {product.quantityAvailable} {product.unit} available
+        <div className="mb-3 text-sm text-neutral-500">
+          {product.quantityAvailable} {product.unit} available
         </div>
 
-        {/* Farmer info + Verified badge */}
         {product.farmerId && (
-          <div className="flex items-center gap-2 flex-wrap mb-4">
-            <span className="text-sm text-gray-500">
-              👨‍🌾 {product.farmerId.name}
-              {product.farmerId.location && ` · 📍 ${product.farmerId.location}`}
-            </span>
-            {product.farmerId.isVerified && (
-              <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-semibold">
-                ✅ Verified
-              </span>
+          <div className="mb-4 space-y-2 border-t border-neutral-100 pt-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-neutral-700">{product.farmerId.name}</span>
+              {product.farmerId.isVerified && <span className="badge badge-primary py-0.5">Verified</span>}
+              {distance !== null && <span className="badge badge-neutral py-0.5">{distance} km away</span>}
+            </div>
+            {product.farmerId.location && (
+              <div className="text-xs text-neutral-500">{product.farmerId.location}</div>
             )}
-            {/* Distance badge */}
-            {userCoords && product.farmerId?.coordinates?.lat && (
-              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 text-xs px-2 py-0.5 rounded-full font-semibold">
-                📍 {getDistanceKm(
-                  userCoords.lat, userCoords.lng,
-                  product.farmerId.coordinates.lat,
-                  product.farmerId.coordinates.lng
-                )} km away
-              </span>
-            )}
-            {/* Farm Story button */}
             <Link
               to={`/farm/${product.farmerId._id}`}
               onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1 bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-semibold hover:bg-amber-200 transition"
+              className="inline-flex text-xs font-semibold text-primary-700 hover:text-primary-800"
             >
-              🌾 Farm Story
+              Farm story
             </Link>
           </div>
         )}
-      </div>
 
-      {/* Notify Me button for low/out of stock */}
-      {user?.role === 'buyer' && product.quantityAvailable <= 5 && (
-        <button
-          onClick={handleSubscribe}
-          className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition mb-2 ${
-            subscribed
-              ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          {subscribed ? '🔔 Notified' : '🔕 Notify Me'}
-        </button>
-      )}
-
-      {/* Price + Order button */}
-      <div className="flex items-center justify-between mt-auto">
-        <div>
-          {isSeasonalActive ? (
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-orange-600">₹{displayPrice}</span>
-              <span className="text-sm text-gray-400 line-through">₹{product.pricePerUnit}</span>
-              <span className="text-gray-500 text-sm">/{product.unit}</span>
-            </div>
-          ) : (
-            <div>
-              <span className="text-2xl font-bold text-green-700">₹{product.pricePerUnit}</span>
-              <span className="text-gray-500 text-sm">/{product.unit}</span>
-            </div>
-          )}
-        </div>
-        <div className="flex flex-col gap-1">
-          <Link
-            to={`/product/${product._id}`}
-            className={`text-white text-sm font-semibold px-4 py-2 rounded-xl transition ${
-              isSeasonalActive
-                ? 'bg-orange-500 hover:bg-orange-600'
-                : 'bg-green-700 hover:bg-green-800'
+        {user?.role === 'buyer' && product.quantityAvailable <= 5 && (
+          <button
+            onClick={handleSubscribe}
+            className={`mb-3 rounded-xl px-3 py-2 text-xs font-semibold ${
+              subscribed
+                ? 'bg-accent-100 text-accent-700 hover:bg-accent-200'
+                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
             }`}
           >
-            Order Now
-          </Link>
-          {user?.role === 'buyer' && (
+            {subscribed ? 'Alerts on' : 'Notify me'}
+          </button>
+        )}
+
+        <div className="mt-auto flex items-end justify-between gap-3 border-t border-neutral-100 pt-4">
+          <div>
+            <div className={`text-2xl font-bold ${isSeasonalActive ? 'text-accent-600' : 'text-primary-700'}`}>
+              Rs {displayPrice}
+            </div>
+            {isSeasonalActive && (
+              <div className="text-xs text-neutral-400 line-through">Rs {product.pricePerUnit}</div>
+            )}
+            <div className="text-xs text-neutral-500">per {product.unit}</div>
+          </div>
+          <div className="flex min-w-28 flex-col gap-2">
             <Link
-              to={`/product/${product._id}/negotiate`}
-              className="text-xs text-center text-green-600 hover:text-green-800 font-semibold bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-xl transition"
+              to={`/product/${product._id}`}
+              className={`${isSeasonalActive ? 'btn-accent' : 'btn-primary'} px-4 py-2 text-sm`}
             >
-              🤝 Negotiate
+              Order
             </Link>
-          )}
-          {user?.role === 'buyer' && (
-            <Link
-              to={`/product/${product._id}/group-buy`}
-              className="text-xs text-center text-purple-600 hover:text-purple-800 font-semibold bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl transition"
-            >
-              👥 Group Buy
-            </Link>
-          )}
+            {user?.role === 'buyer' && (
+              <Link
+                to={`/product/${product._id}/negotiate`}
+                className="rounded-lg bg-primary-50 px-3 py-1.5 text-center text-xs font-semibold text-primary-700 hover:bg-primary-100"
+              >
+                Negotiate
+              </Link>
+            )}
+            {user?.role === 'buyer' && (
+              <Link
+                to={`/product/${product._id}/group-buy`}
+                className="rounded-lg bg-neutral-100 px-3 py-1.5 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200"
+              >
+                Group buy
+              </Link>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </article>
   )
 }

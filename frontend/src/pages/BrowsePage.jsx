@@ -17,12 +17,11 @@ export default function BrowsePage() {
   const [maxPrice, setMaxPrice] = useState('')
   const [showFilters, setShowFilters] = useState(false)
 
-  // Location states
   const [locationInput, setLocationInput] = useState('')
   const [userCoords, setUserCoords] = useState(null)
   const [locating, setLocating] = useState(false)
   const [nearbyOnly, setNearbyOnly] = useState(false)
-  const [nearbyRadius, setNearbyRadius] = useState(100) // km
+  const [nearbyRadius, setNearbyRadius] = useState(100)
 
   useEffect(() => {
     fetchProducts()
@@ -48,7 +47,7 @@ export default function BrowsePage() {
 
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
-      alert('Geolocation not supported by your browser')
+      alert('Geolocation is not supported by your browser')
       return
     }
     setLocating(true)
@@ -73,7 +72,7 @@ export default function BrowsePage() {
       if (results && results.length > 0) {
         setUserCoords({
           lat: parseFloat(results[0].lat),
-          lng: parseFloat(results[0].lon)
+          lng: parseFloat(results[0].lon),
         })
         setNearbyOnly(true)
       } else {
@@ -89,7 +88,6 @@ export default function BrowsePage() {
   const applyFilters = () => {
     let result = [...products]
 
-    // Search filter
     if (search.trim()) {
       result = result.filter(p =>
         p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -98,22 +96,19 @@ export default function BrowsePage() {
       )
     }
 
-    // Max price filter
     if (maxPrice) {
       result = result.filter(p => p.pricePerUnit <= Number(maxPrice))
     }
 
-    // Nearby filter
     if (nearbyOnly && userCoords) {
       result = result.filter(p => {
         const coords = p.farmerId?.coordinates
-        if (!coords?.lat || !coords?.lng) return true // include if no coords
+        if (!coords?.lat || !coords?.lng) return true
         const dist = getDistanceKm(userCoords.lat, userCoords.lng, coords.lat, coords.lng)
         return dist <= nearbyRadius
       })
     }
 
-    // Sort
     if (sortBy === 'nearest' && userCoords) {
       result.sort((a, b) => {
         const aCoords = a.farmerId?.coordinates
@@ -150,61 +145,48 @@ export default function BrowsePage() {
   const hasActiveFilters = search || maxPrice || sortBy !== 'newest' || category !== 'all' || nearbyOnly
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+    <main className="mx-auto max-w-7xl px-4 py-8">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-green-800">Browse Products</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-4xl">Browse Products</h1>
+          <p className="mt-1 text-neutral-500">
             {loading ? 'Loading...' : `${filtered.length} products found`}
           </p>
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 font-semibold text-sm transition ${
-            showFilters
-              ? 'border-green-500 bg-green-50 text-green-700'
-              : 'border-gray-200 text-gray-500 hover:border-gray-300'
+          className={`btn-outline px-4 py-2 text-sm ${
+            showFilters ? 'border-primary-700 bg-primary-50 text-primary-700' : ''
           }`}
         >
-          🔧 Filters {hasActiveFilters && (
-            <span className="bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">!</span>
-          )}
+          Filters
+          {hasActiveFilters && <span className="h-2 w-2 rounded-full bg-accent-500" />}
         </button>
       </div>
 
-      {/* Search bar */}
-      <div className="flex gap-3 mb-4">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by product name, description or farmer..."
-          className="flex-1 border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+          placeholder="Search by product name, description, or farmer..."
+          className="input-field flex-1"
         />
         {hasActiveFilters && (
           <button
             onClick={handleClearFilters}
-            className="px-4 py-3 text-sm text-red-500 hover:text-red-700 font-semibold border-2 border-red-200 rounded-xl hover:bg-red-50 transition"
+            className="btn-outline border-accent-200 px-4 py-3 text-sm text-accent-600 hover:bg-accent-50"
           >
-            Clear All
+            Clear all
           </button>
         )}
       </div>
 
-      {/* Expandable filters panel */}
       {showFilters && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-6 space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
+        <div className="card mb-6 space-y-5 p-5">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Sort By
-              </label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
-              >
+              <label className="label">Sort By</label>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input-field">
                 <option value="newest">Newest First</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
@@ -214,57 +196,40 @@ export default function BrowsePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Max Price (₹)
-              </label>
+              <label className="label">Max Price (Rs)</label>
               <input
                 type="number"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
                 placeholder="e.g. 100"
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="input-field"
               />
             </div>
           </div>
 
-          {/* Location filter */}
-          <div className="border-t border-gray-100 pt-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              📍 Filter by Location
-            </label>
-            <div className="flex gap-2 mb-3 flex-wrap">
+          <div className="border-t border-neutral-100 pt-4">
+            <label className="label">Filter by location</label>
+            <div className="mb-3 flex flex-wrap gap-2">
               <input
                 value={locationInput}
                 onChange={(e) => setLocationInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()}
-                placeholder="Enter your city (e.g. Hyderabad)"
-                className="flex-1 border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 text-sm"
+                placeholder="Enter your city, e.g. Hyderabad"
+                className="input-field min-w-60 flex-1 py-2 text-sm"
               />
-              <button
-                onClick={handleSearchLocation}
-                disabled={locating}
-                className="bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-green-800 transition"
-              >
-                {locating ? '⏳' : '🔍 Search'}
+              <button onClick={handleSearchLocation} disabled={locating} className="btn-primary px-4 py-2 text-sm">
+                {locating ? 'Searching...' : 'Search'}
               </button>
-              <button
-                onClick={handleDetectLocation}
-                disabled={locating}
-                className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition"
-              >
-                {locating ? '⏳' : '📡 Detect'}
+              <button onClick={handleDetectLocation} disabled={locating} className="btn-outline px-4 py-2 text-sm">
+                {locating ? 'Detecting...' : 'Detect'}
               </button>
             </div>
 
             {userCoords && (
-              <div className="flex items-center gap-4 flex-wrap">
-                <span className="text-xs text-green-600 font-semibold bg-green-50 px-3 py-1 rounded-full">
-                  ✅ Location set
-                </span>
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-gray-600 font-semibold">
-                    Radius: {nearbyRadius} km
-                  </label>
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="badge badge-primary">Location set</span>
+                <label className="flex items-center gap-2 text-xs font-semibold text-neutral-600">
+                  Radius: {nearbyRadius} km
                   <input
                     type="range"
                     min="10"
@@ -272,15 +237,15 @@ export default function BrowsePage() {
                     step="10"
                     value={nearbyRadius}
                     onChange={(e) => setNearbyRadius(Number(e.target.value))}
-                    className="w-24"
+                    className="w-28 accent-primary-700"
                   />
-                </div>
-                <label className="flex items-center gap-2 text-xs text-gray-600 font-semibold cursor-pointer">
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-neutral-600">
                   <input
                     type="checkbox"
                     checked={nearbyOnly}
                     onChange={(e) => setNearbyOnly(e.target.checked)}
-                    className="rounded"
+                    className="rounded accent-primary-700"
                   />
                   Nearby only
                 </label>
@@ -290,16 +255,15 @@ export default function BrowsePage() {
         </div>
       )}
 
-      {/* Category filters */}
-      <div className="flex gap-2 mb-8 flex-wrap">
+      <div className="mb-8 flex flex-wrap gap-2">
         {categories.map((c) => (
           <button
             key={c}
             onClick={() => setCategory(c)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold capitalize transition border-2 ${
+            className={`rounded-full border px-4 py-2 text-sm font-semibold capitalize ${
               category === c
-                ? 'bg-green-700 text-white border-green-700'
-                : 'border-gray-200 text-gray-500 hover:border-green-300 bg-white'
+                ? 'border-primary-700 bg-primary-700 text-white'
+                : 'border-neutral-200 bg-white text-neutral-600 hover:border-primary-300 hover:bg-primary-50'
             }`}
           >
             {c}
@@ -308,54 +272,45 @@ export default function BrowsePage() {
         {userCoords && (
           <button
             onClick={() => setNearbyOnly(!nearbyOnly)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition border-2 ${
+            className={`rounded-full border px-4 py-2 text-sm font-semibold ${
               nearbyOnly
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'border-gray-200 text-gray-500 hover:border-blue-300 bg-white'
+                ? 'border-accent-500 bg-accent-500 text-white'
+                : 'border-neutral-200 bg-white text-neutral-600 hover:border-accent-300 hover:bg-accent-50'
             }`}
           >
-            📍 Near Me
+            Near me
           </button>
         )}
       </div>
 
-      {/* Products grid */}
       {loading ? (
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl p-5 animate-pulse">
-              <div className="w-full h-36 bg-gray-200 rounded-xl mb-4" />
-              <div className="h-4 bg-gray-200 rounded mb-2 w-3/4" />
-              <div className="h-3 bg-gray-200 rounded mb-4 w-1/2" />
-              <div className="h-8 bg-gray-200 rounded" />
+            <div key={i} className="card p-5">
+              <div className="mb-4 h-40 animate-pulse rounded-xl bg-neutral-200" />
+              <div className="mb-2 h-4 w-3/4 animate-pulse rounded bg-neutral-200" />
+              <div className="mb-4 h-3 w-1/2 animate-pulse rounded bg-neutral-200" />
+              <div className="h-8 animate-pulse rounded bg-neutral-200" />
             </div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
-          <div className="text-5xl mb-4">🌱</div>
-          <p className="text-lg font-medium">No products found</p>
-          <p className="text-sm mt-1">Try different filters or search terms</p>
+        <div className="card py-20 text-center">
+          <p className="text-lg font-semibold text-neutral-700">No products found</p>
+          <p className="mt-1 text-sm text-neutral-500">Try different filters or search terms.</p>
           {hasActiveFilters && (
-            <button
-              onClick={handleClearFilters}
-              className="mt-4 bg-green-700 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-800 transition"
-            >
-              Clear Filters
+            <button onClick={handleClearFilters} className="btn-primary mt-5">
+              Clear filters
             </button>
           )}
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filtered.map((product) => (
-            <ProductCard
-              key={product._id}
-              product={product}
-              userCoords={userCoords}
-            />
+            <ProductCard key={product._id} product={product} userCoords={userCoords} />
           ))}
         </div>
       )}
-    </div>
+    </main>
   )
 }

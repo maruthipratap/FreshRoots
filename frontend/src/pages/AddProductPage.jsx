@@ -17,7 +17,7 @@ export default function AddProductPage() {
     description: '',
     quantityAvailable: '',
     unit: 'kg',
-    pricePerUnit: ''
+    pricePerUnit: '',
   })
 
   const handleChange = (e) => {
@@ -30,7 +30,7 @@ export default function AddProductPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!form.name || !form.category || !form.quantityAvailable || !form.pricePerUnit) {
       toast.error('Please fill all required fields')
       return
@@ -41,11 +41,11 @@ export default function AddProductPage() {
         ...form,
         quantityAvailable: Number(form.quantityAvailable),
         pricePerUnit: Number(form.pricePerUnit),
-        images: imageUrl ? [imageUrl] : []
+        images: imageUrl ? [imageUrl] : [],
       }
-      
+
       await addProduct(payload)
-      toast.success('Product added! 🌱')
+      toast.success('Product added')
       navigate('/farmer/dashboard')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to add product')
@@ -55,53 +55,40 @@ export default function AddProductPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <Link to="/farmer/dashboard" className="text-gray-400 hover:text-gray-600">
-          ← Back
+    <main className="mx-auto max-w-3xl px-4 py-8">
+      <div className="mb-8 flex flex-wrap items-center gap-3">
+        <Link to="/farmer/dashboard" className="text-sm font-semibold text-neutral-500 hover:text-primary-700">
+          Back
         </Link>
-        <h1 className="text-3xl font-bold text-green-800">Add New Product</h1>
+        <h1 className="text-4xl">Add New Product</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="card space-y-6 p-6">
+        <ImageUpload onUpload={handleImageUpload} existingImage={imageUrl} />
 
-        {/* Image Upload */}
-        <ImageUpload
-          onUpload={handleImageUpload}
-          existingImage={imageUrl}
-        />
-
-        {/* Name */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Product Name *
-          </label>
+          <label className="label">Product Name *</label>
           <input
             name="name"
             value={form.name}
             onChange={handleChange}
             placeholder="e.g. Organic Tomatoes"
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="input-field"
           />
         </div>
 
-        {/* Category */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Category *
-          </label>
-          <div className="grid grid-cols-2 gap-2">
+          <label className="label">Category *</label>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {categories.map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => setForm({ ...form, category: c })}
-                className={`py-2 px-3 rounded-xl border-2 text-sm font-medium capitalize transition text-left ${
+                className={`rounded-xl border-2 px-3 py-2 text-left text-sm font-semibold capitalize ${
                   form.category === c
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                    ? 'border-primary-700 bg-primary-50 text-primary-700'
+                    : 'border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50'
                 }`}
               >
                 {c}
@@ -110,27 +97,21 @@ export default function AddProductPage() {
           </div>
         </div>
 
-        {/* Description */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Description
-          </label>
+          <label className="label">Description</label>
           <textarea
             name="description"
             value={form.description}
             onChange={handleChange}
             placeholder="Tell buyers about your product..."
             rows={3}
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
+            className="input-field resize-none"
           />
         </div>
 
-        {/* Quantity + Unit */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Quantity *
-            </label>
+            <label className="label">Quantity *</label>
             <input
               name="quantityAvailable"
               value={form.quantityAvailable}
@@ -138,19 +119,12 @@ export default function AddProductPage() {
               type="number"
               min="1"
               placeholder="e.g. 50"
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="input-field"
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Unit *
-            </label>
-            <select
-              name="unit"
-              value={form.unit}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
-            >
+            <label className="label">Unit *</label>
+            <select name="unit" value={form.unit} onChange={handleChange} className="input-field">
               {units.map((u) => (
                 <option key={u} value={u}>{u}</option>
               ))}
@@ -158,11 +132,8 @@ export default function AddProductPage() {
           </div>
         </div>
 
-        {/* Price */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Price per {form.unit} (₹) *
-          </label>
+          <label className="label">Price per {form.unit} (Rs) *</label>
           <input
             name="pricePerUnit"
             value={form.pricePerUnit}
@@ -170,42 +141,33 @@ export default function AddProductPage() {
             type="number"
             min="1"
             placeholder="e.g. 40"
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="input-field"
           />
         </div>
 
-        {/* Live Preview */}
         {form.name && form.pricePerUnit && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-            <div className="text-xs font-bold text-green-600 mb-2 uppercase tracking-wide">
+          <div className="rounded-2xl border border-primary-200 bg-primary-50 p-4">
+            <div className="mb-2 text-xs font-bold uppercase tracking-wide text-primary-700">
               Preview
             </div>
             {imageUrl && (
-              <img
-                src={imageUrl}
-                alt="preview"
-                className="w-full h-32 object-cover rounded-lg mb-3"
-              />
+              <img src={imageUrl} alt="preview" className="mb-3 h-36 w-full rounded-xl object-cover" />
             )}
-            <div className="font-semibold text-gray-800">{form.name}</div>
-            <div className="text-sm text-gray-500 capitalize">{form.category}</div>
-            <div className="text-green-700 font-bold mt-1">
-              ₹{form.pricePerUnit}/{form.unit}
+            <div className="font-semibold text-neutral-800">{form.name}</div>
+            <div className="text-sm capitalize text-neutral-500">{form.category || 'Uncategorized'}</div>
+            <div className="mt-1 font-bold text-primary-700">
+              Rs {form.pricePerUnit}/{form.unit}
             </div>
-            <div className="text-sm text-gray-500">
-              {form.quantityAvailable} {form.unit} available
+            <div className="text-sm text-neutral-500">
+              {form.quantityAvailable || 0} {form.unit} available
             </div>
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold py-4 rounded-xl transition text-lg"
-        >
-          {loading ? '⏳ Adding...' : '🌱 Add Product'}
+        <button type="submit" disabled={loading} className="btn-primary w-full py-4 text-lg">
+          {loading ? 'Adding...' : 'Add product'}
         </button>
       </form>
-    </div>
+    </main>
   )
 }

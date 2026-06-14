@@ -30,14 +30,14 @@ import MyGroupBuysPage from './pages/MyGroupBuysPage'
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
-  if (loading) return <div className="p-8">Loading...</div>
+  if (loading) return <div className="p-8 text-neutral-600">Loading...</div>
   if (!user) return <Navigate to="/login" replace />
   return children
 }
 
 function AppContent() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-50">
       <Navbar />
       <Routes>
         <Route path="/" element={<HomePage />} />

@@ -7,14 +7,21 @@ export default function Navbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
-    if (user) {
-      fetchUnreadCount()
-      const interval = setInterval(fetchUnreadCount, 30000)
-      return () => clearInterval(interval)
-    }
+    const handleScroll = () => setScrolled(window.scrollY > 10)
+    handleScroll()
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  useEffect(() => {
+    if (!user) return
+    fetchUnreadCount()
+    const interval = setInterval(fetchUnreadCount, 30000)
+    return () => clearInterval(interval)
   }, [user])
 
   const fetchUnreadCount = async () => {
@@ -22,7 +29,7 @@ export default function Navbar() {
       const res = await getUnreadCount()
       setUnreadCount(res.data.count)
     } catch {
-      // silent fail
+      // Keep navigation usable if notification count fails.
     }
   }
 
@@ -34,213 +41,162 @@ export default function Navbar() {
 
   const closeMenu = () => setMenuOpen(false)
 
-  return (
-    <nav className="bg-green-800 text-white shadow-lg sticky top-0 z-50">
-      <div className="px-4 py-3 flex items-center justify-between">
+  const farmerLinks = [
+    { to: '/farmer/dashboard', label: 'Dashboard', primary: true },
+    { to: '/farmer/harvests', label: 'Harvests' },
+    { to: '/farmer/subscription-boxes', label: 'Boxes' },
+    { to: '/farmer/negotiations', label: 'Deals' },
+    { to: '/farmer/profile', label: 'Profile' },
+  ]
 
-        {/* Logo */}
-        <Link to="/" onClick={closeMenu} className="flex items-center gap-2">
-          <span className="text-2xl">🌱</span>
-          <div>
-            <div className="font-bold text-lg leading-none">FreshRoots</div>
-            <div className="text-green-300 text-xs">Soil to Soul</div>
-          </div>
+  const buyerLinks = [
+    { to: '/browse', label: 'Browse', primary: true },
+    { to: '/harvests', label: 'Harvests' },
+    { to: '/group-buys', label: 'Groups' },
+    { to: '/subscription-boxes', label: 'Boxes' },
+    { to: '/orders', label: 'Orders' },
+    { to: '/buyer/negotiations', label: 'Deals' },
+  ]
+
+  const mobileFarmerLinks = [
+    ...farmerLinks,
+    { to: '/farmer/add-product', label: 'Add Product' },
+  ]
+
+  const mobileBuyerLinks = [
+    ...buyerLinks,
+    { to: '/my-subscriptions', label: 'My Subscriptions' },
+    { to: '/my-group-buys', label: 'My Group Buys' },
+    { to: '/notifications', label: `Notifications${unreadCount > 0 ? ` (${unreadCount})` : ''}` },
+  ]
+
+  const activeLinks = user?.role === 'farmer' ? farmerLinks : buyerLinks
+  const mobileLinks = user?.role === 'farmer' ? mobileFarmerLinks : mobileBuyerLinks
+
+  return (
+    <nav
+      className={`sticky top-0 z-50 border-b transition-all duration-300 ${
+        scrolled
+          ? 'border-neutral-200 bg-white/90 shadow-sm backdrop-blur-md'
+          : 'border-neutral-100 bg-white'
+      }`}
+    >
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
+        <Link to="/" onClick={closeMenu} className="flex items-center gap-3 hover:opacity-85">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-700 font-display text-xl font-bold text-white">
+            FR
+          </span>
+          <span>
+            <span className="block text-lg font-bold leading-none text-primary-700">FreshRoots</span>
+            <span className="block text-xs text-neutral-500">Soil to Soul</span>
+          </span>
         </Link>
 
-        {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
-              <span className="text-green-200 text-sm">👋 {user.name}</span>
-              <span className="bg-green-600 text-xs px-3 py-1 rounded-full capitalize">
-                {user.role}
+              <span className="text-sm text-neutral-600">
+                Welcome, <span className="font-semibold text-neutral-800">{user.name}</span>
               </span>
-              {user.role === 'farmer' ? (
-                <>
-                  <Link to="/farmer/dashboard" className="bg-white text-green-800 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-50 transition">
-                    Dashboard
-                  </Link>
-                  <Link to="/farmer/harvests" className="text-green-200 hover:text-white text-sm transition">
-                    Harvests
-                  </Link>
-                  <Link to="/farmer/subscription-boxes" className="text-green-200 hover:text-white text-sm transition">
-                    Boxes
-                  </Link>
-                  <Link to="/farmer/negotiations" className="text-green-200 hover:text-white text-sm transition">
-                    Deals
-                  </Link>
-                  <Link to="/farmer/profile" className="text-green-200 hover:text-white text-sm transition">
-                    Profile
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link to="/browse" className="bg-white text-green-800 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-50 transition">
-                    Browse
-                  </Link>
-                  <Link to="/harvests" className="text-green-200 hover:text-white text-sm transition">
-                    Harvests
-                  </Link>
-                  <Link to="/group-buys" className="text-green-200 hover:text-white text-sm transition">
-                    Groups
-                  </Link>
-                  <Link to="/subscription-boxes" className="text-green-200 hover:text-white text-sm transition">
-                    Boxes
-                  </Link>
-                  <Link to="/orders" className="text-green-200 hover:text-white text-sm transition">
-                    Orders
-                  </Link>
-                  <Link to="/buyer/negotiations" className="text-green-200 hover:text-white text-sm transition">
-                    Deals
-                  </Link>
-                </>
-              )}
+              <span className="badge badge-primary capitalize">{user.role}</span>
 
-              {/* Notification Bell */}
-              <Link to="/notifications" className="relative">
-                <span className="text-xl">🔔</span>
+              {activeLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={
+                    link.primary
+                      ? 'btn-primary px-4 py-2 text-sm'
+                      : 'text-sm font-medium text-neutral-600 hover:text-primary-700'
+                  }
+                >
+                  {link.label}
+                </Link>
+              ))}
+
+              <Link
+                to="/notifications"
+                className="relative rounded-lg px-3 py-2 text-sm font-semibold text-neutral-600 hover:bg-neutral-100 hover:text-primary-700"
+                aria-label="Notifications"
+              >
+                Alerts
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-500 px-1 text-xs font-bold text-white">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </Link>
 
-              <button onClick={handleLogout} className="text-green-300 hover:text-white text-sm transition">
+              <button
+                onClick={handleLogout}
+                className="text-sm font-medium text-neutral-500 hover:text-accent-600"
+              >
                 Logout
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="text-green-200 hover:text-white text-sm transition">
+              <Link to="/login" className="text-sm font-medium text-neutral-600 hover:text-primary-700">
                 Login
               </Link>
-              <Link to="/register" className="bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-lg text-sm font-semibold transition">
+              <Link to="/register" className="btn-accent px-4 py-2 text-sm">
                 Sign Up
               </Link>
             </>
           )}
         </div>
 
-        {/* Mobile hamburger */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="md:hidden flex flex-col gap-1.5 p-2"
+          className="rounded-lg p-2 text-neutral-800 hover:bg-neutral-100 md:hidden"
+          aria-label="Toggle navigation"
+          aria-expanded={menuOpen}
         >
-          <span className={`block w-6 h-0.5 bg-white transition-transform duration-300 ${menuOpen ? 'rotate-45 translate-y-2' : ''}`} />
-          <span className={`block w-6 h-0.5 bg-white transition-opacity duration-300 ${menuOpen ? 'opacity-0' : ''}`} />
-          <span className={`block w-6 h-0.5 bg-white transition-transform duration-300 ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+          <span className="sr-only">Toggle menu</span>
+          <span className={`block h-0.5 w-6 bg-current transition-transform ${menuOpen ? 'translate-y-1.5 rotate-45' : ''}`} />
+          <span className={`my-1 block h-0.5 w-6 bg-current transition-opacity ${menuOpen ? 'opacity-0' : ''}`} />
+          <span className={`block h-0.5 w-6 bg-current transition-transform ${menuOpen ? '-translate-y-1.5 -rotate-45' : ''}`} />
         </button>
       </div>
 
-      {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden bg-green-900 px-4 py-4 flex flex-col gap-3 border-t border-green-700">
+        <div className="border-t border-neutral-200 bg-neutral-50 px-4 py-4 md:hidden">
           {user ? (
             <>
-              <div className="flex items-center gap-3 pb-3 border-b border-green-700">
-                <div className="w-10 h-10 bg-green-700 rounded-full flex items-center justify-center text-xl">
-                  {user.role === 'farmer' ? '👨‍🌾' : '🛒'}
-                </div>
-                <div>
-                  <div className="font-semibold">{user.name}</div>
-                  <div className="text-green-300 text-xs capitalize">
-                    {user.role} · {user.location || 'No location'}
-                  </div>
+              <div className="mb-3 border-b border-neutral-200 pb-3">
+                <div className="font-semibold text-neutral-800">{user.name}</div>
+                <div className="text-xs capitalize text-neutral-500">
+                  {user.role} {user.location ? `- ${user.location}` : ''}
                 </div>
               </div>
-
-              {user.role === 'farmer' ? (
-                <>
-                  <Link to="/farmer/dashboard" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    📦 Dashboard
+              <div className="flex flex-col gap-1">
+                {mobileLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    onClick={closeMenu}
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-white hover:text-primary-700"
+                  >
+                    {link.label}
                   </Link>
-                  <Link to="/farmer/profile" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    👨‍🌾 My Profile
-                  </Link>
-                  <Link to="/farmer/add-product" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    ➕ Add Product
-                  </Link>
-                  <Link to="/farmer/harvests" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    📅 Harvest Calendar
-                  </Link>
-                  <Link to="/farmer/subscription-boxes" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    📦 Subscription Boxes
-                  </Link>
-                  <Link to="/farmer/negotiations" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    🤝 Bulk Deals
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link to="/browse" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    🌿 Browse Products
-                  </Link>
-                  <Link to="/harvests" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    📅 Upcoming Harvests
-                  </Link>
-                  <Link to="/group-buys" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    👥 Group Buying
-                  </Link>
-                  <Link to="/subscription-boxes" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    📦 Subscription Boxes
-                  </Link>
-                  <Link to="/my-subscriptions" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    🔄 My Subscriptions
-                  </Link>
-                  <Link to="/orders" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    📋 My Orders
-                  </Link>
-                  <Link to="/buyer/negotiations" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    🤝 My Deals
-                  </Link>
-                  <Link to="/my-group-buys" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    👥 My Group Buys
-                  </Link>
-                  <Link to="/notifications" onClick={closeMenu}
-                    className="flex items-center gap-3 py-2 text-white hover:text-green-300 transition">
-                    🔔 Notifications
-                    {unreadCount > 0 && (
-                      <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                </>
-              )}
-
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-3 py-2 text-red-300 hover:text-red-200 transition mt-2 border-t border-green-700 pt-3"
-              >
-                🚪 Logout
-              </button>
+                ))}
+                <button
+                  onClick={handleLogout}
+                  className="mt-2 rounded-lg border-t border-neutral-200 px-3 py-3 text-left text-sm font-semibold text-accent-600 hover:bg-white"
+                >
+                  Logout
+                </button>
+              </div>
             </>
           ) : (
-            <>
-              <Link to="/login" onClick={closeMenu}
-                className="py-3 text-center text-white border border-green-600 rounded-xl hover:bg-green-800 transition">
+            <div className="grid gap-3">
+              <Link to="/login" onClick={closeMenu} className="btn-outline py-3 text-sm">
                 Login
               </Link>
-              <Link to="/register" onClick={closeMenu}
-                className="py-3 text-center bg-orange-500 hover:bg-orange-600 rounded-xl font-semibold transition">
+              <Link to="/register" onClick={closeMenu} className="btn-accent py-3 text-sm">
                 Sign Up
               </Link>
-            </>
+            </div>
           )}
         </div>
       )}
