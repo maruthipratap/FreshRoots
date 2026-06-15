@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getUnreadCount } from '../services/api'
+import { FreshRootsLogo } from './Icons'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
@@ -83,9 +84,7 @@ export default function Navbar() {
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
         <Link to="/" onClick={closeMenu} className="flex items-center gap-3 hover:opacity-85">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-700 font-display text-xl font-bold text-white">
-            FR
-          </span>
+          <FreshRootsLogo className="h-10 w-10 shrink-0" />
           <span>
             <span className="block text-lg font-bold leading-none text-primary-700">FreshRoots</span>
             <span className="block text-xs text-neutral-500">Soil to Soul</span>

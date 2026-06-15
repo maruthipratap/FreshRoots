@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { FreshRootsLogo, Icon, categoryIcons } from '../components/Icons'
 
 const categories = [
   { token: 'CR', name: 'Crops' },
@@ -18,19 +19,26 @@ const steps = [
   { step: '04', title: 'Trade stays fair', desc: 'Buyers get traceable food while farmers keep more of the final price.' },
 ]
 
+const showcaseItems = [
+  { title: 'Seasonal vegetables', meta: '12 km away', icon: 'leaf', className: 'sm:col-span-2' },
+  { title: 'Weekly farm box', meta: 'Rs 499 / week', icon: 'package', className: '' },
+  { title: 'Verified grower', meta: 'Profile reviewed', icon: 'shield', className: '' },
+  { title: 'Harvest pre-booking', meta: 'Ready Friday', icon: 'calendar', className: 'sm:col-span-2' },
+]
+
 export default function HomePage() {
   const { user } = useAuth()
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      <section className="bg-primary-700 text-white">
+      <section className="relative overflow-hidden bg-primary-700 text-white">
         <div className="mx-auto grid max-w-7xl gap-12 px-6 py-20 md:grid-cols-[1.15fr_0.85fr] md:items-center md:py-24">
-          <div>
+          <div className="reveal-up">
             <div className="badge mb-6 bg-primary-600 text-primary-50">
               Direct from farmers
             </div>
             <h1 className="max-w-3xl text-white">
-              FreshRoots
+              Know your farmer. Trust your food.
             </h1>
             <p className="mt-5 max-w-2xl text-xl leading-8 text-primary-100">
               A direct farmer-to-buyer marketplace for fresh food, honest pricing, and farm relationships without middlemen.
@@ -41,35 +49,46 @@ export default function HomePage() {
                   to={user.role === 'farmer' ? '/farmer/dashboard' : '/browse'}
                   className="btn-accent text-base"
                 >
-                  {user.role === 'farmer' ? 'Go to dashboard' : 'Browse products'}
+                  {user.role === 'farmer' ? 'Go to dashboard' : 'Discover nearby farms'}
                 </Link>
               ) : (
                 <>
                   <Link to="/register?role=farmer" className="btn-accent text-base">
-                    Join as farmer
+                    Join the movement
                   </Link>
                   <Link to="/register?role=buyer" className="btn-secondary border-white bg-white text-primary-700 hover:bg-primary-50">
-                    Join as buyer
+                    Discover nearby farms
                   </Link>
                 </>
               )}
             </div>
           </div>
 
-          <div className="rounded-3xl border border-primary-500/50 bg-primary-800/45 p-6 shadow-xl">
-            <div className="grid gap-4">
-              {[
-                { label: 'Farmers decide price', value: '100%' },
-                { label: 'Middlemen required', value: '0' },
-                { label: 'Product types', value: '50+' },
-              ].map((item) => (
-                <div key={item.label} className="rounded-2xl bg-white/10 p-5">
-                  <div className="font-display text-4xl font-bold text-white">{item.value}</div>
-                  <div className="mt-1 text-sm text-primary-100">{item.label}</div>
+          <div className="reveal-up rounded-3xl border border-primary-500/50 bg-primary-800/45 p-5 shadow-xl" style={{ animationDelay: '90ms' }}>
+            <div className="mb-4 flex items-center justify-between rounded-2xl bg-white/10 p-4">
+              <FreshRootsLogo className="h-14 w-14" />
+              <div className="text-right">
+                <div className="text-sm font-semibold text-white">FreshRoots</div>
+                <div className="text-xs text-primary-100">Soil to Soul</div>
+              </div>
+            </div>
+            <div className="grid auto-rows-[132px] gap-4 sm:grid-cols-2">
+              {showcaseItems.map((item) => (
+                <div key={item.title} className={`rounded-2xl bg-white p-5 text-neutral-800 shadow-sm ${item.className}`}>
+                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-700">
+                    <Icon name={item.icon} className="h-5 w-5" />
+                  </div>
+                  <div className="font-semibold">{item.title}</div>
+                  <div className="mt-1 text-sm text-neutral-500">{item.meta}</div>
                 </div>
               ))}
             </div>
           </div>
+        </div>
+        <div className="organic-divider text-neutral-50" aria-hidden="true">
+          <svg viewBox="0 0 1440 96" preserveAspectRatio="none">
+            <path d="M0 38c160 42 320 42 480 0s320-42 480 0 320 42 480 0v58H0V38Z" fill="currentColor" />
+          </svg>
         </div>
       </section>
 
@@ -89,8 +108,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-6 px-6 py-20 md:grid-cols-2">
-        <div className="card border-l-4 border-l-primary-500 p-8">
+      <section className="mx-auto grid max-w-6xl gap-6 px-6 py-20 md:grid-cols-[0.95fr_1.05fr]">
+        <div className="card reveal-up border-l-4 border-l-primary-500 p-8">
           <span className="badge badge-primary mb-4">For farmers</span>
           <h2 className="mb-5 text-3xl">Sell with control</h2>
           <ul className="mb-6 space-y-3 text-neutral-600">
@@ -111,7 +130,7 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="card border-l-4 border-l-accent-400 p-8">
+        <div className="card reveal-up border-l-4 border-l-accent-400 p-8 md:translate-y-10" style={{ animationDelay: '80ms' }}>
           <span className="badge badge-accent mb-4">For buyers</span>
           <h2 className="mb-5 text-3xl">Buy closer to source</h2>
           <ul className="mb-6 space-y-3 text-neutral-600">
@@ -135,7 +154,7 @@ export default function HomePage() {
 
       <section className="bg-neutral-100 py-20">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="mx-auto mb-10 max-w-2xl text-center">
+          <div className="mb-10 max-w-2xl">
             <h2>What's on FreshRoots?</h2>
             <p className="mt-3">Everything that comes from a farm, directly to you.</p>
           </div>
@@ -146,8 +165,8 @@ export default function HomePage() {
                 key={c.name}
                 className="card hover-lift p-5 text-center"
               >
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 font-bold text-primary-700">
-                  {c.token}
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-primary-700">
+                  <Icon name={categoryIcons[c.name.toLowerCase()] || 'leaf'} className="h-6 w-6" />
                 </div>
                 <div className="text-sm font-semibold text-neutral-700">{c.name}</div>
               </Link>
@@ -163,7 +182,7 @@ export default function HomePage() {
         </div>
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-4">
           {steps.map((s) => (
-            <div key={s.step} className="rounded-2xl border border-neutral-200 bg-white p-6">
+            <div key={s.step} className="reveal-up rounded-2xl border border-neutral-200 bg-white p-6">
               <div className="mb-4 font-display text-3xl font-bold text-accent-500">{s.step}</div>
               <h3 className="mb-2 text-lg">{s.title}</h3>
               <p className="text-sm">{s.desc}</p>

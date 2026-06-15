@@ -156,4 +156,67 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  .freshroots-emoji-icon {
+    @apply mx-0.5 inline-flex h-[1.1em] w-[1.1em] items-center justify-center align-[-0.16em] text-primary-700;
+  }
+
+  .freshroots-emoji-icon svg {
+    @apply h-full w-full;
+  }
+
+  .freshroots-emoji-icon-check,
+  .freshroots-emoji-icon-shield {
+    @apply text-primary-600;
+  }
+
+  .freshroots-emoji-icon-x,
+  .freshroots-emoji-icon-alert {
+    @apply text-accent-600;
+  }
+
+  .freshroots-emoji-icon-spinner {
+    @apply animate-spin;
+  }
+
+  .organic-divider {
+    @apply pointer-events-none absolute inset-x-0 bottom-[-1px] h-16 overflow-hidden;
+  }
+
+  .organic-divider svg {
+    @apply h-full w-full;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal-up {
+      animation: freshroots-reveal-up 260ms ease-out both;
+    }
+
+    .hover-lift {
+      @apply hover:scale-[1.02] hover:-translate-y-0.5;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@keyframes freshroots-reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

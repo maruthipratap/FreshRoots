@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import api from '../services/api'
+import { Icon } from './Icons'
 
 export default function ImageUpload({ onUpload, existingImage }) {
   const [uploading, setUploading] = useState(false)
@@ -10,34 +11,30 @@ export default function ImageUpload({ onUpload, existingImage }) {
     const file = e.target.files[0]
     if (!file) return
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file')
       return
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Image must be less than 5MB')
       return
     }
 
-    // Show local preview immediately
     const localPreview = URL.createObjectURL(file)
     setPreview(localPreview)
 
-    // Upload to Cloudinary via backend
     setUploading(true)
     try {
       const formData = new FormData()
       formData.append('image', file)
 
       const res = await api.post('/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
       })
 
       onUpload(res.data.url)
-      toast.success('Image uploaded! ✅')
+      toast.success('Image uploaded')
     } catch {
       toast.error('Failed to upload image')
       setPreview(existingImage || null)
@@ -48,46 +45,41 @@ export default function ImageUpload({ onUpload, existingImage }) {
 
   return (
     <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-2">
-        Product Image
-      </label>
+      <label className="label">Product Image</label>
 
-      {/* Preview */}
       {preview ? (
         <div className="relative mb-3">
           <img
             src={preview}
             alt="Product preview"
-            className="w-full h-48 object-cover rounded-xl border border-gray-200"
+            className="h-48 w-full rounded-xl border border-neutral-200 object-cover"
           />
           {uploading && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-xl flex items-center justify-center">
-              <div className="text-white font-semibold">⏳ Uploading...</div>
+            <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/50">
+              <div className="flex items-center gap-2 font-semibold text-white">
+                <Icon name="spinner" className="h-4 w-4 animate-spin" />
+                Uploading...
+              </div>
             </div>
           )}
           {!uploading && (
-            <label className="absolute bottom-2 right-2 bg-white text-gray-700 text-xs font-semibold px-3 py-1 rounded-lg cursor-pointer hover:bg-gray-50 shadow">
+            <label className="absolute bottom-2 right-2 cursor-pointer rounded-lg bg-white px-3 py-1 text-xs font-semibold text-neutral-700 shadow hover:bg-neutral-50">
               Change
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
+              <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
             </label>
           )}
         </div>
       ) : (
-        <label className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer transition ${
+        <label className={`flex h-40 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition ${
           uploading
-            ? 'border-green-300 bg-green-50'
-            : 'border-gray-300 hover:border-green-400 hover:bg-green-50'
+            ? 'border-primary-300 bg-primary-50'
+            : 'border-neutral-300 hover:border-primary-400 hover:bg-primary-50'
         }`}>
-          <div className="text-4xl mb-2">📷</div>
-          <div className="text-sm font-semibold text-gray-600">
-            {uploading ? '⏳ Uploading...' : 'Click to upload image'}
+          <Icon name="camera" className="mb-2 h-9 w-9 text-neutral-400" />
+          <div className="text-sm font-semibold text-neutral-600">
+            {uploading ? 'Uploading...' : 'Click to upload image'}
           </div>
-          <div className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP · Max 5MB</div>
+          <div className="mt-1 text-xs text-neutral-400">JPG, PNG, WEBP - Max 5MB</div>
           <input
             type="file"
             accept="image/*"
