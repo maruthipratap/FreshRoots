@@ -4,14 +4,6 @@ import { useAuth } from '../context/AuthContext'
 import { getGroupBuys, joinGroupBuy } from '../services/api'
 import toast from 'react-hot-toast'
 
-const statusColors = {
-  open: 'bg-green-100 text-green-700',
-  locked: 'bg-blue-100 text-blue-700',
-  completed: 'bg-purple-100 text-purple-700',
-  expired: 'bg-gray-100 text-gray-500',
-  cancelled: 'bg-red-100 text-red-600'
-}
-
 export default function GroupBuyPage() {
   const { user } = useAuth()
   const [groupBuys, setGroupBuys] = useState([])

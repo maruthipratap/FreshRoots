@@ -13,6 +13,23 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Automatically handle 401/403 responses
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      if (localStorage.getItem('fr_token')) {
+        localStorage.removeItem('fr_token')
+        localStorage.removeItem('fr_user')
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+          window.location.href = '/login'
+        }
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
 // Auth
 export const sendOTP = (phoneNumber) => api.post('/auth/send-otp', { phoneNumber })
 export const registerUser = (data) => api.post('/auth/register', data)

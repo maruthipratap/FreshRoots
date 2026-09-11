@@ -12,19 +12,29 @@ function escapeRegExp(string) {
 const addProduct = asyncHandler(async (req, res) => {
   const { category, name, description, quantityAvailable, unit, pricePerUnit, images } = req.body
 
-  if (!category || !name || !quantityAvailable || !unit || !pricePerUnit) {
+  if (!category || !name || quantityAvailable === undefined || !unit || pricePerUnit === undefined) {
     return res.status(400).json({ message: 'Please fill all required fields' })
+  }
+
+  const numQty = Number(quantityAvailable)
+  const numPrice = Number(pricePerUnit)
+
+  if (isNaN(numQty) || numQty < 0) {
+    return res.status(400).json({ message: 'Available quantity must be a non-negative number' })
+  }
+  if (isNaN(numPrice) || numPrice <= 0) {
+    return res.status(400).json({ message: 'Price per unit must be a positive number' })
   }
 
   const product = await Product.create({
     farmerId: req.user._id,
     category,
-    name,
+    name: typeof name === 'string' ? name.trim() : '',
     description: description || '',
-    quantityAvailable,
+    quantityAvailable: numQty,
     unit,
-    pricePerUnit,
-    images: images || []
+    pricePerUnit: numPrice,
+    images: Array.isArray(images) ? images : []
   })
 
   res.status(201).json(product)

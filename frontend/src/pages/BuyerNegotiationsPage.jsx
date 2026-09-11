@@ -42,7 +42,7 @@ export default function BuyerNegotiationsPage() {
   const handleRespond = async (id, action) => {
     setResponding(id + action)
     try {
-      const res = await buyerRespondToNegotiation(id, { action })
+      await buyerRespondToNegotiation(id, { action })
       if (action === 'accept') {
         toast.success('Deal accepted! Order placed automatically 🎉')
       } else {

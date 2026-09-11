@@ -3,6 +3,19 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { sendOTP, registerUser, loginUser } from '../services/api'
+import { FreshRootsLogo } from '../components/Icons'
+import {
+  User,
+  Tractor,
+  ShoppingBag,
+  Phone,
+  ShieldCheck,
+  MapPin,
+  KeyRound,
+  ArrowRight,
+  CheckCircle2,
+  Sparkles
+} from 'lucide-react'
 
 export default function AuthPage({ mode }) {
   const [searchParams] = useSearchParams()
@@ -32,15 +45,15 @@ export default function AuthPage({ mode }) {
       return
     }
     if (isRegister && !form.name.trim()) {
-      toast.error('Enter your name')
+      toast.error('Enter your full name')
       return
     }
     setLoading(true)
     try {
       await sendOTP(form.phoneNumber)
       setStep(2)
-      toast.success('OTP sent! Use 1234 for now')
-    } catch (err) {
+      toast.success('OTP sent successfully! Use 1234')
+    } catch {
       toast.error('Failed to send OTP')
     } finally {
       setLoading(false)
@@ -65,166 +78,200 @@ export default function AuthPage({ mode }) {
       }
       const { token, user } = res.data
       login(user, token)
-      toast.success(`Welcome, ${user.name}! 🌱`)
+      toast.success(`Welcome to FreshRoots, ${user.name}! 🌱`)
       navigate(user.role === 'farmer' ? '/farmer/dashboard' : '/browse')
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Something went wrong')
+      toast.error(err.response?.data?.message || 'Authentication failed')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-green-50 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
-        
+    <div className="min-h-[calc(100vh-80px)] bg-gradient-to-br from-primary-50 via-neutral-50 to-primary-100/40 flex items-center justify-center px-4 py-12">
+      <div className="card w-full max-w-md bg-white p-8 rounded-3xl border border-neutral-200/80 shadow-xl reveal-up">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-2">🌱</div>
-          <h1 className="text-2xl font-bold text-green-800">
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-50 text-primary-700 mb-4 shadow-sm">
+            <FreshRootsLogo className="h-10 w-10" />
+          </div>
+          <h1 className="text-2xl font-bold text-neutral-900 font-display">
             {isRegister ? 'Join FreshRoots' : 'Welcome Back'}
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {isRegister ? 'Create your account' : 'Login to continue'}
+          <p className="text-sm text-neutral-500 mt-1.5">
+            {isRegister ? 'Direct farm marketplace connection' : 'Log in with your verified phone number'}
           </p>
         </div>
 
-        <div className="space-y-4">
+        {/* Mode Switcher Tabs */}
+        <div className="grid grid-cols-2 gap-1 rounded-2xl bg-neutral-100/80 p-1 mb-6 border border-neutral-200/50">
+          <Link
+            to="/login"
+            className={`rounded-xl py-2 text-center text-xs font-bold transition-all ${
+              !isRegister
+                ? 'bg-white text-primary-700 shadow-sm'
+                : 'text-neutral-500 hover:text-neutral-800'
+            }`}
+          >
+            Login
+          </Link>
+          <Link
+            to="/register"
+            className={`rounded-xl py-2 text-center text-xs font-bold transition-all ${
+              isRegister
+                ? 'bg-white text-primary-700 shadow-sm'
+                : 'text-neutral-500 hover:text-neutral-800'
+            }`}
+          >
+            Create Account
+          </Link>
+        </div>
 
+        <div className="space-y-4">
           {step === 1 && (
             <>
-              {/* Register only fields */}
               {isRegister && (
                 <>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
-                      Your Name
-                    </label>
-                    <input
-                      name="name"
-                      value={form.name}
-                      onChange={handleChange}
-                      placeholder="Full name"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
-                      I am a...
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {['farmer', 'buyer'].map((r) => (
-                        <button
-                          key={r}
-                          type="button"
-                          onClick={() => setForm({ ...form, role: r })}
-                          className={`py-3 rounded-xl border-2 font-semibold capitalize transition ${
-                            form.role === r
-                              ? 'border-green-500 bg-green-50 text-green-700'
-                              : 'border-gray-200 text-gray-500'
-                          }`}
-                        >
-                          {r === 'farmer' ? '👨‍🌾' : '🛒'} {r}
-                        </button>
-                      ))}
+                    <label className="label">Full Name</label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-3.5 h-4 w-4 text-neutral-400" />
+                      <input
+                        name="name"
+                        value={form.name}
+                        onChange={handleChange}
+                        placeholder="John Farmer or Sarah Buyer"
+                        className="input-field pl-10"
+                      />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
-                      Location
-                    </label>
-                    <input
-                      name="location"
-                      value={form.location}
-                      onChange={handleChange}
-                      placeholder="City or Village"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
-                    />
+                    <label className="label">I am joining as a...</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, role: 'farmer' })}
+                        className={`flex flex-col items-center gap-1.5 p-4 rounded-2xl border-2 font-semibold text-xs transition-all ${
+                          form.role === 'farmer'
+                            ? 'border-primary-600 bg-primary-50/80 text-primary-800 shadow-sm'
+                            : 'border-neutral-200 text-neutral-600 hover:border-neutral-300'
+                        }`}
+                      >
+                        <Tractor className="h-6 w-6 text-primary-600" />
+                        <span>Farmer / Grower</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, role: 'buyer' })}
+                        className={`flex flex-col items-center gap-1.5 p-4 rounded-2xl border-2 font-semibold text-xs transition-all ${
+                          form.role === 'buyer'
+                            ? 'border-accent-500 bg-accent-50/80 text-accent-700 shadow-sm'
+                            : 'border-neutral-200 text-neutral-600 hover:border-neutral-300'
+                        }`}
+                      >
+                        <ShoppingBag className="h-6 w-6 text-accent-500" />
+                        <span>Buyer / Consumer</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="label">City / Village Location</label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-neutral-400" />
+                      <input
+                        name="location"
+                        value={form.location}
+                        onChange={handleChange}
+                        placeholder="e.g. Pune, Maharashtra"
+                        className="input-field pl-10"
+                      />
+                    </div>
                   </div>
                 </>
               )}
 
-              {/* Phone number - both login and register */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Phone Number
-                </label>
-                <input
-                  name="phoneNumber"
-                  value={form.phoneNumber}
-                  onChange={handleChange}
-                  placeholder="10-digit phone number"
-                  maxLength={10}
-                  type="tel"
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
-                />
+                <label className="label">Mobile Phone Number</label>
+                <div className="relative">
+                  <Phone className="absolute left-3.5 top-3.5 h-4 w-4 text-neutral-400" />
+                  <input
+                    name="phoneNumber"
+                    value={form.phoneNumber}
+                    onChange={handleChange}
+                    placeholder="10-digit mobile number"
+                    maxLength={10}
+                    type="tel"
+                    className="input-field pl-10"
+                  />
+                </div>
               </div>
 
               <button
                 onClick={handleSendOTP}
                 disabled={loading}
-                className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold py-3 rounded-xl transition"
+                className="btn-primary w-full py-3.5 text-base shadow-sm hover:shadow flex items-center justify-center gap-2 mt-2"
               >
-                {loading ? '⏳ Sending...' : '📱 Send OTP'}
+                {loading ? (
+                  <span>Sending OTP...</span>
+                ) : (
+                  <>
+                    <span>Send Verification Code</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </button>
             </>
           )}
 
           {step === 2 && (
             <>
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-700">
-                OTP sent to <strong>{form.phoneNumber}</strong>
-                <br />
-                <span className="font-bold">Mock OTP: 1234</span>
+              <div className="rounded-2xl border border-primary-200 bg-primary-50/80 p-4 text-xs text-primary-800 flex items-start gap-2.5">
+                <ShieldCheck className="h-5 w-5 text-primary-600 shrink-0 mt-0.5" />
+                <div>
+                  <div>Code sent to <strong>+91 {form.phoneNumber}</strong></div>
+                  <div className="font-semibold text-primary-900 mt-1">Dev Test OTP Code: <span className="font-mono bg-white px-2 py-0.5 rounded border border-primary-200">1234</span></div>
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Enter OTP
-                </label>
-                <input
-                  name="otp"
-                  value={form.otp}
-                  onChange={handleChange}
-                  placeholder="1234"
-                  maxLength={4}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-center text-2xl tracking-widest font-bold focus:outline-none focus:ring-2 focus:ring-green-400"
-                />
+                <label className="label text-center">Enter 4-Digit OTP Code</label>
+                <div className="relative">
+                  <KeyRound className="absolute left-3.5 top-3.5 h-5 w-5 text-neutral-400" />
+                  <input
+                    name="otp"
+                    value={form.otp}
+                    onChange={handleChange}
+                    placeholder="1234"
+                    maxLength={4}
+                    className="input-field pl-12 text-center text-2xl tracking-[0.5em] font-bold font-mono text-primary-700"
+                  />
+                </div>
               </div>
 
               <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold py-3 rounded-xl transition"
+                className="btn-accent w-full py-3.5 text-base shadow-sm hover:shadow flex items-center justify-center gap-2 mt-2"
               >
-                {loading ? '⏳ Verifying...' : isRegister ? '✅ Create Account' : '✅ Login'}
+                {loading ? (
+                  <span>Verifying...</span>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span>{isRegister ? 'Complete Registration' : 'Log In Now'}</span>
+                  </>
+                )}
               </button>
 
               <button
                 onClick={() => setStep(1)}
-                className="w-full text-sm text-gray-400 hover:text-gray-600"
+                className="w-full text-center text-xs font-semibold text-neutral-500 hover:text-neutral-800 pt-2"
               >
-                ← Change number
+                ← Change Phone Number
               </button>
-            </>
-          )}
-        </div>
-
-        {/* Switch between login and register */}
-        <div className="mt-6 text-center text-sm text-gray-500">
-          {isRegister ? (
-            <>Already have an account?{' '}
-              <Link to="/login" className="text-green-600 font-semibold hover:underline">
-                Login
-              </Link>
-            </>
-          ) : (
-            <>New here?{' '}
-              <Link to="/register" className="text-green-600 font-semibold hover:underline">
-                Create account
-              </Link>
             </>
           )}
         </div>
