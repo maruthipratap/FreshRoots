@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
+import InitialAppLoader from './components/InitialAppLoader'
 import AuthPage from './pages/AuthPage'
 import HomePage from './pages/HomePage'
 import FarmerDashboard from './pages/FarmerDashboard'
@@ -164,8 +166,18 @@ function AppContent() {
 }
 
 export default function App() {
+  const [appLoading, setAppLoading] = useState(() => {
+    return !sessionStorage.getItem('fr_loaded')
+  })
+
+  const handleLoaderComplete = () => {
+    sessionStorage.setItem('fr_loaded', 'true')
+    setAppLoading(false)
+  }
+
   return (
     <AuthProvider>
+      {appLoading && <InitialAppLoader onComplete={handleLoaderComplete} />}
       <AppContent />
       <Toaster position="top-right" />
     </AuthProvider>
