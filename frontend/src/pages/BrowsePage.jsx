@@ -2,7 +2,18 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { getProducts, geocodeLocation } from '../services/api'
 import ProductCard from '../components/ProductCard'
+import { ProductCardSkeleton } from '../components/SkeletonLoader'
 import { getDistanceKm } from '../utils/distance'
+import {
+  Search,
+  SlidersHorizontal,
+  X,
+  MapPin,
+  Sparkles,
+  RotateCcw,
+  ShoppingBag,
+  ArrowUpDown
+} from 'lucide-react'
 
 const categories = ['all', 'vegetables', 'fruits', 'milk & dairy', 'meat', 'eggs', 'crops', 'farm-made products']
 
@@ -146,89 +157,116 @@ export default function BrowsePage() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      {/* Title & Filter Header */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200/60 pb-6">
         <div>
-          <h1 className="text-4xl">Browse Products</h1>
-          <p className="mt-1 text-neutral-500">
-            {loading ? 'Loading...' : `${filtered.length} products found`}
+          <h1 className="text-3xl font-extrabold text-neutral-900 font-display flex items-center gap-2.5">
+            <ShoppingBag className="h-8 w-8 text-primary-700" />
+            Direct Farm Marketplace
+          </h1>
+          <p className="mt-1 text-sm font-medium text-neutral-500">
+            {loading ? 'Fetching fresh produce...' : `${filtered.length} products available near you`}
           </p>
         </div>
+
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`btn-outline px-4 py-2 text-sm ${
+          className={`btn-outline px-4 py-2.5 text-sm font-semibold flex items-center gap-2 shadow-sm ${
             showFilters ? 'border-primary-700 bg-primary-50 text-primary-700' : ''
           }`}
         >
-          Filters
-          {hasActiveFilters && <span className="h-2 w-2 rounded-full bg-accent-500" />}
+          <SlidersHorizontal className="h-4 w-4" />
+          <span>Filters</span>
+          {hasActiveFilters && <span className="h-2 w-2 rounded-full bg-accent-500 animate-ping" />}
         </button>
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by product name, description, or farmer..."
-          className="input-field flex-1"
-        />
+      {/* Search Bar */}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-3.5 h-5 w-5 text-neutral-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search produce, farmer name, or farm location..."
+            className="input-field pl-12 pr-10 py-3 text-base shadow-sm"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-3.5 top-3.5 text-neutral-400 hover:text-neutral-700"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+
         {hasActiveFilters && (
           <button
             onClick={handleClearFilters}
-            className="btn-outline border-accent-200 px-4 py-3 text-sm text-accent-600 hover:bg-accent-50"
+            className="btn-outline border-accent-200/80 px-4 py-3 text-sm font-semibold text-accent-600 hover:bg-accent-50 flex items-center gap-1.5 justify-center"
           >
-            Clear all
+            <RotateCcw className="h-4 w-4" />
+            Clear All
           </button>
         )}
       </div>
 
+      {/* Filter Drawer Card */}
       {showFilters && (
-        <div className="card mb-6 space-y-5 p-5">
-          <div className="grid gap-4 sm:grid-cols-2">
+        <div className="card mb-8 space-y-6 p-6 border border-neutral-200/80 bg-white shadow-md rounded-2xl reveal-up">
+          <div className="grid gap-6 sm:grid-cols-2">
             <div>
-              <label className="label">Sort By</label>
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input-field">
-                <option value="newest">Newest First</option>
+              <label className="label flex items-center gap-1.5">
+                <ArrowUpDown className="h-4 w-4 text-primary-600" />
+                Sort Products By
+              </label>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input-field py-2.5">
+                <option value="newest">Newest Listed</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
-                <option value="quantity">Most Available</option>
-                {userCoords && <option value="nearest">Nearest First</option>}
+                <option value="quantity">Highest Quantity Available</option>
+                {userCoords && <option value="nearest">Nearest Farm Distance</option>}
               </select>
             </div>
 
             <div>
-              <label className="label">Max Price (Rs)</label>
+              <label className="label">Max Price Limit (₹)</label>
               <input
                 type="number"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
-                placeholder="e.g. 100"
-                className="input-field"
+                placeholder="e.g. 150"
+                className="input-field py-2.5"
               />
             </div>
           </div>
 
-          <div className="border-t border-neutral-100 pt-4">
-            <label className="label">Filter by location</label>
-            <div className="mb-3 flex flex-wrap gap-2">
+          <div className="border-t border-neutral-100 pt-5">
+            <label className="label flex items-center gap-1.5">
+              <MapPin className="h-4 w-4 text-accent-500" />
+              Filter By Farm Location & Distance
+            </label>
+            <div className="mb-4 flex flex-wrap gap-2.5">
               <input
                 value={locationInput}
                 onChange={(e) => setLocationInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()}
-                placeholder="Enter your city, e.g. Hyderabad"
-                className="input-field min-w-60 flex-1 py-2 text-sm"
+                placeholder="Enter city or district name (e.g. Pune)"
+                className="input-field min-w-[240px] flex-1 py-2 text-sm"
               />
-              <button onClick={handleSearchLocation} disabled={locating} className="btn-primary px-4 py-2 text-sm">
-                {locating ? 'Searching...' : 'Search'}
+              <button onClick={handleSearchLocation} disabled={locating} className="btn-primary px-5 py-2 text-sm">
+                {locating ? 'Searching...' : 'Search Location'}
               </button>
               <button onClick={handleDetectLocation} disabled={locating} className="btn-outline px-4 py-2 text-sm">
-                {locating ? 'Detecting...' : 'Detect'}
+                {locating ? 'Detecting...' : 'Detect GPS'}
               </button>
             </div>
 
             {userCoords && (
-              <div className="flex flex-wrap items-center gap-4">
-                <span className="badge badge-primary">Location set</span>
-                <label className="flex items-center gap-2 text-xs font-semibold text-neutral-600">
+              <div className="flex flex-wrap items-center gap-4 bg-primary-50/70 p-3.5 rounded-xl border border-primary-200/50">
+                <span className="badge badge-primary font-bold">GPS Location Set</span>
+                <label className="flex items-center gap-2 text-xs font-semibold text-neutral-700">
                   Radius: {nearbyRadius} km
                   <input
                     type="range"
@@ -237,17 +275,17 @@ export default function BrowsePage() {
                     step="10"
                     value={nearbyRadius}
                     onChange={(e) => setNearbyRadius(Number(e.target.value))}
-                    className="w-28 accent-primary-700"
+                    className="w-32 accent-primary-700"
                   />
                 </label>
-                <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-neutral-600">
+                <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-neutral-700">
                   <input
                     type="checkbox"
                     checked={nearbyOnly}
                     onChange={(e) => setNearbyOnly(e.target.checked)}
-                    className="rounded accent-primary-700"
+                    className="rounded accent-primary-700 h-4 w-4"
                   />
-                  Nearby only
+                  Nearby Farms Only
                 </label>
               </div>
             )}
@@ -255,57 +293,45 @@ export default function BrowsePage() {
         </div>
       )}
 
-      <div className="mb-8 flex flex-wrap gap-2">
+      {/* Category Pills Slider */}
+      <div className="mb-8 flex flex-wrap gap-2 overflow-x-auto pb-2 scrollbar-none">
         {categories.map((c) => (
           <button
             key={c}
             onClick={() => setCategory(c)}
-            className={`rounded-full border px-4 py-2 text-sm font-semibold capitalize ${
+            className={`rounded-full px-4 py-2 text-xs font-bold capitalize transition-all ${
               category === c
-                ? 'border-primary-700 bg-primary-700 text-white'
-                : 'border-neutral-200 bg-white text-neutral-600 hover:border-primary-300 hover:bg-primary-50'
+                ? 'bg-primary-700 text-white shadow-sm'
+                : 'border border-neutral-200/80 bg-white text-neutral-600 hover:border-primary-300 hover:bg-primary-50'
             }`}
           >
             {c}
           </button>
         ))}
-        {userCoords && (
-          <button
-            onClick={() => setNearbyOnly(!nearbyOnly)}
-            className={`rounded-full border px-4 py-2 text-sm font-semibold ${
-              nearbyOnly
-                ? 'border-accent-500 bg-accent-500 text-white'
-                : 'border-neutral-200 bg-white text-neutral-600 hover:border-accent-300 hover:bg-accent-50'
-            }`}
-          >
-            Near me
-          </button>
-        )}
       </div>
 
+      {/* Products Grid / Skeletons */}
       {loading ? (
-        <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="card p-5">
-              <div className="mb-4 h-40 animate-pulse rounded-xl bg-neutral-200" />
-              <div className="mb-2 h-4 w-3/4 animate-pulse rounded bg-neutral-200" />
-              <div className="mb-4 h-3 w-1/2 animate-pulse rounded bg-neutral-200" />
-              <div className="h-8 animate-pulse rounded bg-neutral-200" />
-            </div>
+            <ProductCardSkeleton key={i} />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="card py-20 text-center">
-          <p className="text-lg font-semibold text-neutral-700">No products found</p>
-          <p className="mt-1 text-sm text-neutral-500">Try different filters or search terms.</p>
+        <div className="card rounded-3xl p-16 text-center max-w-lg mx-auto my-12 border border-neutral-200/80 bg-white shadow-sm">
+          <Sparkles className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-neutral-800 font-display">No Produce Found</h3>
+          <p className="mt-2 text-sm text-neutral-500">
+            We couldn't find any products matching your current search or category filter.
+          </p>
           {hasActiveFilters && (
-            <button onClick={handleClearFilters} className="btn-primary mt-5">
-              Clear filters
+            <button onClick={handleClearFilters} className="btn-primary mt-6 text-sm py-2.5 px-6">
+              Reset All Filters
             </button>
           )}
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filtered.map((product) => (
             <ProductCard key={product._id} product={product} userCoords={userCoords} />
           ))}

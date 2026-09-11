@@ -43,11 +43,41 @@ const createGroupBuy = asyncHandler(async (req, res) => {
     targetQuantity,
     quantityPerPerson,
     unlockedPrice,
-    expiresAt
+    expiresAt,
+    participants: [
+      {
+        userId: req.user._id,
+        quantity: quantityPerPerson
+      }
+    ],
+    currentQuantity: quantityPerPerson
   })
 
   await groupBuy.populate('productId', 'name images unit pricePerUnit category')
   await groupBuy.populate('creatorId', 'name location')
+
+  // If target is reached immediately (e.g. targetQuantity equals quantityPerPerson)
+  if (groupBuy.currentQuantity >= groupBuy.targetQuantity) {
+    groupBuy.status = 'locked'
+
+    await Order.create({
+      productId: product._id,
+      buyerId: req.user._id,
+      farmerId: product.farmerId,
+      quantityOrdered: quantityPerPerson,
+      totalPrice: unlockedPrice * quantityPerPerson,
+      deliveryType: 'pickup',
+      status: 'pending',
+      paymentStatus: 'pending',
+      notes: `Group Buy Deal — ₹${unlockedPrice}/${product.unit} (${groupBuy.title})`
+    })
+
+    product.quantityAvailable -= quantityPerPerson
+    await product.save()
+
+    groupBuy.status = 'completed'
+    await groupBuy.save()
+  }
 
   res.status(201).json(groupBuy)
 })

@@ -2,7 +2,6 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
-import EmojiIconReplacer from './components/EmojiIconReplacer'
 import AuthPage from './pages/AuthPage'
 import HomePage from './pages/HomePage'
 import FarmerDashboard from './pages/FarmerDashboard'
@@ -168,7 +167,6 @@ export default function App() {
   return (
     <AuthProvider>
       <AppContent />
-      <EmojiIconReplacer />
       <Toaster position="top-right" />
     </AuthProvider>
   )

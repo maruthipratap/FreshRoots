@@ -7,8 +7,9 @@ const { asyncHandler } = require('../middleware/errorMiddleware')
 const placeOrder = asyncHandler(async (req, res) => {
   const { productId, quantityOrdered, deliveryType, deliveryAddress, notes } = req.body
 
-  if (!productId || !quantityOrdered || !deliveryType) {
-    return res.status(400).json({ message: 'productId, quantityOrdered and deliveryType are required' })
+  const numQty = Number(quantityOrdered)
+  if (!productId || isNaN(numQty) || numQty <= 0 || !deliveryType) {
+    return res.status(400).json({ message: 'Valid productId, quantityOrdered (> 0), and deliveryType are required' })
   }
 
   // Find the product
@@ -18,14 +19,20 @@ const placeOrder = asyncHandler(async (req, res) => {
   }
 
   // Check if enough quantity is available
-  if (product.quantityAvailable < quantityOrdered) {
+  if (product.quantityAvailable < numQty) {
     return res.status(400).json({
       message: `Only ${product.quantityAvailable} ${product.unit} available`
     })
   }
 
-  // Calculate total price
-  const totalPrice = product.pricePerUnit * quantityOrdered
+  // Calculate total price (using seasonal price if active)
+  const isSeasonalActive = product.isSeasonal &&
+    product.seasonalPrice &&
+    product.seasonEnd &&
+    new Date(product.seasonEnd) > new Date()
+
+  const priceToUse = isSeasonalActive ? product.seasonalPrice : product.pricePerUnit
+  const totalPrice = priceToUse * quantityOrdered
 
   // Create the order
   const order = await Order.create({
